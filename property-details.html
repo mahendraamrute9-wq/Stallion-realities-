@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Property Details | Stallion Realties</title>
+  <meta name="description" content="View comprehensive property details, photo gallery, specifications, price, and schedule an exclusive tour with Stallion Realties." />
+  
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="stylesheet" href="css/responsive.css" />
+</head>
+<body>
+
+  <!-- ========================================================================
+       SITE HEADER / NAVIGATION
+       ======================================================================== -->
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="index.html" class="brand-logo" aria-label="Stallion Realties Home">
+        <div class="logo-crest"><img src="assets/images/stallion-horse-black-clean.png" alt="Stallion Realties Horse Logo" class="logo-horse-img" /></div>
+        <div class="brand-text-wrap">
+          <span class="brand-name">Stallion <span>Realties</span></span>
+          <span class="brand-tagline">Trust &bull; Prestige &bull; Value</span>
+        </div>
+      </a>
+
+      <nav class="nav-menu" aria-label="Main Navigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="properties.html" class="nav-link active">Properties</a>
+        <a href="about.html" class="nav-link">About Us</a>
+        <a href="contact.html" class="nav-link">Contact</a>
+      </nav>
+
+      <div class="nav-actions">
+        <a href="tel:+919925027051" class="header-phone" title="Call Stallion Realties">
+          <svg viewBox="0 0 24 24"><path d="M20.01 15.38c-1.23 0-2.42-.2-3.53-.56a.977.977 0 00-1.01.24l-1.57 1.97c-2.83-1.44-5.15-3.75-6.59-6.59l1.97-1.57c.28-.27.36-.67.25-1.02A11.36 11.36 0 018.57 3.99c.07-.55-.38-1-.94-1H4.03c-.56 0-1.03.45-1 1.01C3.6 13.9 10.1 20.4 18.01 20.97c.56.03 1.01-.44 1.01-1v-3.59c0-.56-.45-1-1.01-1z"/></svg>
+          <span>+91 99250 27051</span>
+        </a>
+
+        <div id="navAuthMount" style="display: inline-flex; align-items: center;"></div>
+
+        <a href="contact.html" class="btn btn-gold btn-sm">
+          Property Enquiry
+        </a>
+
+        <button class="mobile-toggle" aria-label="Open mobile menu">
+          <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Off-Canvas Drawer -->
+  <div class="drawer-overlay"></div>
+  <aside class="mobile-drawer" aria-label="Mobile Navigation Drawer">
+    <div class="drawer-header">
+      <div class="brand-text-wrap">
+        <span class="brand-name">Stallion <span>Realties</span></span>
+        <span class="brand-tagline">Property Advisory</span>
+      </div>
+      <button class="drawer-close" aria-label="Close menu">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>
+    </div>
+
+    <nav class="drawer-links">
+      <a href="index.html" class="drawer-link">Home</a>
+      <a href="properties.html" class="drawer-link active">Properties</a>
+      <a href="about.html" class="drawer-link">About Us</a>
+      <a href="contact.html" class="drawer-link">Contact</a>
+    </nav>
+
+    <div style="margin-top: auto; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.08);">
+      <a href="tel:+919925027051" class="btn btn-secondary" style="width: 100%; margin-bottom: 12px;">
+        Call +91 99250 27051
+      </a>
+      <a href="contact.html" class="btn btn-gold" style="width: 100%;">
+        Send Enquiry
+      </a>
+    </div>
+  </aside>
+
+  <main>
+    <!-- Dynamic Property Details Container -->
+    <section class="section" style="padding-top: 40px;">
+      <div class="container" id="propertyDetailsRoot">
+        <!-- Rendered dynamically by js/details.js from properties-data.js -->
+        <div style="text-align: center; padding: 60px 0; color: var(--text-muted);">
+          Loading property specifications...
+        </div>
+      </div>
+    </section>
+
+    <!-- Similar Properties Section -->
+    <section class="section section-darker">
+      <div class="container">
+        <div class="section-header">
+          <span class="section-tag">Recommended Alternatives</span>
+          <h2 class="section-title">Similar <span class="text-gold">Properties</span></h2>
+          <p class="section-subtitle">
+            Explore other handpicked listings that match similar location, price, or property categories.
+          </p>
+        </div>
+
+        <div class="properties-grid" id="similarPropertiesGrid">
+          <!-- Populated by js/details.js -->
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ========================================================================
+       SITE FOOTER
+       ======================================================================== -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-top">
+        <div class="footer-brand">
+          <a href="index.html" class="brand-logo">
+            <div class="logo-crest"><img src="assets/images/stallion-horse-black-clean.png" alt="Stallion Realties Horse Logo" class="logo-horse-img" /></div>
+            <div class="brand-text-wrap">
+              <span class="brand-name">Stallion <span>Realties</span></span>
+            </div>
+          </a>
+          <p>
+            Your premier property partner for verified houses, apartments, shops, and plots across prime residential and commercial corridors.
+          </p>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Quick Links</h4>
+          <div class="footer-links">
+            <a href="index.html">Home</a>
+            <a href="properties.html">Browse Properties</a>
+            <a href="about.html">About Stallion</a>
+            <a href="contact.html">Contact Us</a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Property Types</h4>
+          <div class="footer-links">
+            <a href="properties.html?type=house">Houses &amp; Villas</a>
+            <a href="properties.html?type=apartment">Apartments</a>
+            <a href="properties.html?type=shop">Commercial Shops</a>
+            <a href="properties.html?type=plot">Residential Plots</a>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="footer-title">Reach Out</h4>
+          <div class="footer-links" style="color: var(--text-muted); font-size: 0.88rem;">
+            <p style="margin-bottom: 8px; line-height: 1.4;">
+              <strong style="color: #fff;">Office:</strong> "STALLION HOUSE", Opp. Zebar School, Beside Sharanya Bellevue, Near Bodakdev Police Station, Maple County Road, Thaltej, Ahmedabad &ndash; 380 059
+            </p>
+            <p style="margin-bottom: 8px;"><strong>Phone:</strong> <a href="tel:+919925027051" style="color: var(--gold-light); text-decoration: none;">+91 99250 27051</a></p>
+            <p style="margin-bottom: 8px;"><strong>WhatsApp:</strong> <a href="https://wa.me/919925027051" target="_blank" rel="noopener noreferrer" style="color: var(--whatsapp-green); text-decoration: none;">+91 99250 27051</a></p>
+            <p style="margin-bottom: 8px;"><strong>Email:</strong> <a href="mailto:stallionrealities@gmail.com" style="color: var(--gold-light); text-decoration: none;">stallionrealities@gmail.com</a></p>
+            <p style="margin-bottom: 8px; line-height: 1.5;"><strong>Hours:</strong> Mon &ndash; Sat: 10:00 AM &ndash; 7:00 PM<br/><span style="color: var(--gold-light);">Sunday: By Prior Appointment</span></p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer-bottom">
+        <div>
+          &copy; 2026 Stallion Realties. All rights reserved. Demo property listings for preview.
+        </div>
+        <div>
+          Designed for Trust, Excellence &amp; Performance &bull; <a href="admin-login.html" class="discreet-staff-link" style="color: rgba(255,255,255,0.22); font-size: 0.78rem; text-decoration: none; margin-left: 6px;" title="Staff Access">Staff Portal</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/properties-data.js"></script>
+  <script src="js/property-storage.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/user-auth.js"></script>
+  <script src="js/auth-modal.js"></script>
+  <script src="js/main.js"></script>
+  <script src="js/details.js"></script>
+</body>
+</html>
+
