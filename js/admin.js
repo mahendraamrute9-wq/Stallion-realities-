@@ -442,10 +442,19 @@ document.addEventListener('DOMContentLoaded', () => {
       ownerNotes
     };
 
-    PropertyStorage.save(propData);
+    const savedProp = PropertyStorage.save(propData);
     closeModal();
     window.showToast(`Property "${title}" saved successfully!`, 'success');
     renderTable();
+
+    // If Google Sheet database is connected, push asynchronously
+    if (PropertyStorage.getSheetApiUrl()) {
+      PropertyStorage.saveToCloud(savedProp, 'Stallion@2026').then(res => {
+        if (res && res.success) {
+          console.log('[Stallion] Live database updated for property:', savedProp.id);
+        }
+      }).catch(err => console.warn('[Stallion] Background cloud save error:', err));
+    }
   });
 
   /* ==========================================================================
@@ -465,10 +474,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('confirmDeleteBtn')?.addEventListener('click', () => {
     if (pendingDeleteId) {
-      PropertyStorage.delete(pendingDeleteId);
+      const idToDelete = pendingDeleteId;
+      PropertyStorage.delete(idToDelete);
       closeDeleteModal();
       window.showToast('Listing removed successfully.', 'success');
       renderTable();
+
+      // If Google Sheet database is connected, delete from cloud
+      if (PropertyStorage.getSheetApiUrl()) {
+        PropertyStorage.deleteFromCloud(idToDelete, 'Stallion@2026').then(res => {
+          if (res && res.success) {
+            console.log('[Stallion] Live database deleted property:', idToDelete);
+          }
+        }).catch(err => console.warn('[Stallion] Background cloud delete error:', err));
+      }
     }
   });
 
@@ -503,6 +522,139 @@ document.addEventListener('DOMContentLoaded', () => {
       alert(result.message);
     }
   });
+
+  /* ==========================================================================
+     GOOGLE SHEETS LIVE DATABASE CONTROLLER
+     ========================================================================== */
+  const sheetModal = document.getElementById('sheetConfigModal');
+  const sheetUrlInput = document.getElementById('sheetApiUrlInput');
+  const sheetStatusEl = document.getElementById('sheetConfigStatus');
+  const liveSyncDot = document.getElementById('liveSyncStatusDot');
+  const liveSyncText = document.getElementById('liveSyncStatusText');
+  const configBtnText = document.getElementById('configSheetBtnText');
+  const disconnectBtn = document.getElementById('disconnectSheetBtn');
+
+  function updateDatabaseBannerStatus() {
+    const currentUrl = PropertyStorage.getSheetApiUrl();
+    if (currentUrl) {
+      if (liveSyncDot) liveSyncDot.style.background = 'var(--accent-green)';
+      if (liveSyncText) {
+        liveSyncText.innerHTML = '<strong>Live Database Sync:</strong> <span style="color: var(--accent-green);">&#10003; Connected &amp; Live</span> &bull; Host: GitHub Pages';
+      }
+      if (configBtnText) configBtnText.textContent = 'Database Connected';
+      if (disconnectBtn) disconnectBtn.style.display = 'inline-block';
+    } else {
+      if (liveSyncDot) liveSyncDot.style.background = '#f59e0b';
+      if (liveSyncText) {
+        liveSyncText.innerHTML = '<strong>Live Database:</strong> <span style="color: #f59e0b;">Ready to Connect</span> &bull; Host: GitHub Pages';
+      }
+      if (configBtnText) configBtnText.textContent = 'Connect Database';
+      if (disconnectBtn) disconnectBtn.style.display = 'none';
+    }
+  }
+
+  function openSheetConfigModal() {
+    if (!sheetModal) return;
+    if (sheetUrlInput) {
+      sheetUrlInput.value = PropertyStorage.getSheetApiUrl();
+    }
+    if (sheetStatusEl) {
+      sheetStatusEl.style.display = 'none';
+      sheetStatusEl.textContent = '';
+    }
+    const currentUrl = PropertyStorage.getSheetApiUrl();
+    if (disconnectBtn) {
+      disconnectBtn.style.display = currentUrl ? 'inline-block' : 'none';
+    }
+    sheetModal.classList.add('open');
+    if (sheetUrlInput) setTimeout(() => sheetUrlInput.focus(), 150);
+  }
+
+  function closeSheetConfigModal() {
+    if (sheetModal) sheetModal.classList.remove('open');
+  }
+
+  function showSheetStatus(msg, statusType) {
+    if (!sheetStatusEl) return;
+    sheetStatusEl.style.display = 'block';
+    sheetStatusEl.textContent = msg;
+    if (statusType === true) {
+      sheetStatusEl.style.background = 'rgba(16, 185, 129, 0.15)';
+      sheetStatusEl.style.border = '1px solid var(--accent-green)';
+      sheetStatusEl.style.color = 'var(--accent-green)';
+    } else if (statusType === 'info') {
+      sheetStatusEl.style.background = 'rgba(212, 175, 55, 0.15)';
+      sheetStatusEl.style.border = '1px solid var(--gold-border)';
+      sheetStatusEl.style.color = 'var(--gold-light)';
+    } else {
+      sheetStatusEl.style.background = 'rgba(239, 68, 68, 0.15)';
+      sheetStatusEl.style.border = '1px solid var(--accent-red)';
+      sheetStatusEl.style.color = 'var(--accent-red)';
+    }
+  }
+
+  async function handleTestConnection() {
+    const url = (sheetUrlInput?.value || '').trim();
+    if (!url) {
+      showSheetStatus('Please enter your Google Apps Script Web App URL first.', false);
+      return;
+    }
+    showSheetStatus('Testing connection to Google Sheets...', 'info');
+    const res = await PropertyStorage.testConnection(url);
+    if (res.success) {
+      showSheetStatus('✓ Connection successful! ' + res.message, true);
+    } else {
+      showSheetStatus('Connection failed: ' + res.message, false);
+    }
+  }
+
+  async function handleSaveSheetConfig() {
+    const url = (sheetUrlInput?.value || '').trim();
+    if (!url) {
+      PropertyStorage.setSheetApiUrl('');
+      updateDatabaseBannerStatus();
+      closeSheetConfigModal();
+      window.showToast('Live database disconnected.', 'info');
+      return;
+    }
+
+    showSheetStatus('Verifying & connecting...', 'info');
+    const res = await PropertyStorage.testConnection(url);
+    if (!res.success) {
+      showSheetStatus('Could not verify endpoint: ' + res.message + '. Please ensure Web App access is set to "Anyone".', false);
+      return;
+    }
+
+    PropertyStorage.setSheetApiUrl(url);
+    updateDatabaseBannerStatus();
+    showSheetStatus('✓ Connected! Google Sheet is now your active live database.', true);
+    window.showToast('Google Sheet database connected successfully!', 'success');
+    
+    // Trigger background fetch to get existing items
+    PropertyStorage.fetchLiveProperties();
+
+    setTimeout(() => {
+      closeSheetConfigModal();
+    }, 1000);
+  }
+
+  function handleDisconnectSheet() {
+    if (confirm('Disconnect Google Sheets live database?')) {
+      PropertyStorage.setSheetApiUrl('');
+      updateDatabaseBannerStatus();
+      closeSheetConfigModal();
+      window.showToast('Live database disconnected.', 'info');
+    }
+  }
+
+  document.getElementById('configSheetDbBtn')?.addEventListener('click', openSheetConfigModal);
+  document.getElementById('closeSheetConfigModalBtn')?.addEventListener('click', closeSheetConfigModal);
+  document.getElementById('testSheetConnBtn')?.addEventListener('click', handleTestConnection);
+  document.getElementById('saveSheetConfigBtn')?.addEventListener('click', handleSaveSheetConfig);
+  document.getElementById('disconnectSheetBtn')?.addEventListener('click', handleDisconnectSheet);
+
+  // Initialize banner status
+  updateDatabaseBannerStatus();
 
   /* ==========================================================================
      MODAL CONTROLS: PASSWORD-CONFIRMED LIVE WEBSITE SYNC
@@ -554,22 +706,63 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    // Password verified! Activate Live Sync
+    const confirmBtn = document.getElementById('confirmLiveSyncBtn');
+    const origBtnText = confirmBtn ? confirmBtn.innerHTML : '';
+    if (confirmBtn) {
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Syncing Live Database...';
+    }
+
+    const hasCloud = Boolean(PropertyStorage.getSheetApiUrl());
+    let cloudSynced = false;
+    let cloudMessage = '';
+
+    if (hasCloud) {
+      try {
+        const cloudRes = await PropertyStorage.syncAllToCloud(enteredPass);
+        if (cloudRes && cloudRes.success) {
+          cloudSynced = true;
+          cloudMessage = cloudRes.message;
+        } else {
+          cloudMessage = cloudRes ? cloudRes.message : 'Cloud sync response error';
+        }
+      } catch (cloudErr) {
+        cloudMessage = cloudErr.toString();
+      }
+    }
+
+    // Save/update mirror in local storage
+    PropertyStorage.syncRepository();
+
+    // Automatically export/download updated properties-data.js for repository backup
+    PropertyStorage.exportDataFile();
+
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.innerHTML = origBtnText;
+    }
+
+    // Permanent clean website link
     const isLive = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
     const catalogUrl = isLive 
       ? 'https://mahendraamrute9-wq.github.io/Stallion-realities-/'
       : PropertyStorage.getCatalogShareUrl('index.html');
-    
-    // Save/update mirror in local storage
-    PropertyStorage.syncRepository();
-
-    // Automatically export/download updated properties-data.js
-    PropertyStorage.exportDataFile();
 
     // Show success view
     if (liveSyncPromptSection) liveSyncPromptSection.style.display = 'none';
     if (liveSyncModalFooter) liveSyncModalFooter.style.display = 'none';
     if (liveSyncSuccessSection) liveSyncSuccessSection.style.display = 'block';
+
+    const successDetails = document.getElementById('liveSyncSuccessDetails');
+    if (successDetails) {
+      if (cloudSynced) {
+        successDetails.innerHTML = `All <strong>${PropertyStorage.getAll().length}</strong> properties are synchronized live to your Google Sheet database! All website visitors will see them immediately on your permanent link.`;
+      } else if (hasCloud) {
+        successDetails.innerHTML = `Local sync complete. (Cloud notice: ${cloudMessage}). Downloaded properties-data.js backup.`;
+      } else {
+        successDetails.innerHTML = `All properties saved locally and backup downloaded. To push directly to live website visitors without GitHub tokens, connect your Google Sheet in <strong>Database Settings</strong>!`;
+      }
+    }
 
     if (liveSyncUrlInput) {
       liveSyncUrlInput.value = catalogUrl;
@@ -582,21 +775,17 @@ document.addEventListener('DOMContentLoaded', () => {
       waLiveSyncBtn.href = `https://wa.me/919925027051?text=${waText}`;
     }
 
-    // Update banner UI
-    const statusText = document.getElementById('liveSyncStatusText');
-    if (statusText) {
-      statusText.innerHTML = '<strong>Live Website Sync:</strong> <span style="color: var(--accent-green);">&#10003; Synced &amp; Active</span>';
-    }
+    updateDatabaseBannerStatus();
 
     // Auto-copy permanent link to clipboard
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(catalogUrl).then(() => {
-        window.showToast('Live Sync Active! Website link copied to clipboard.', 'success');
+        window.showToast('Live Sync Complete! Website link copied to clipboard.', 'success');
       }).catch(() => {
-        window.showToast('Live Sync Active! Link generated below.', 'success');
+        window.showToast('Live Sync Complete!', 'success');
       });
     } else {
-      window.showToast('Live Sync Active! Link generated below.', 'success');
+      window.showToast('Live Sync Complete!', 'success');
     }
   }
 
@@ -692,6 +881,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeDeleteModal();
       closePasswordModal();
       closeLiveSyncModal();
+      closeSheetConfigModal();
     }
   });
 

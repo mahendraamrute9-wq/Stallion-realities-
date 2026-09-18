@@ -253,8 +253,85 @@ const PropertyStorage = (() => {
     }
   }
 
+  const SHEET_API_KEY = 'STALLION_SHEET_API_URL';
+
+  function getSheetApiUrl() {
+    if (typeof window !== 'undefined') {
+      return (
+        localStorage.getItem(SHEET_API_KEY) ||
+        (window.STALLION_CONFIG && window.STALLION_CONFIG.SHEET_API_URL) ||
+        window.STALLION_SHEET_API_URL ||
+        ''
+      ).trim();
+    }
+    return '';
+  }
+
+  function setSheetApiUrl(url) {
+    if (typeof window !== 'undefined') {
+      if (url) {
+        localStorage.setItem(SHEET_API_KEY, url.trim());
+        window.STALLION_SHEET_API_URL = url.trim();
+      } else {
+        localStorage.removeItem(SHEET_API_KEY);
+        window.STALLION_SHEET_API_URL = '';
+      }
+    }
+  }
+
+  /**
+   * Test connection to Google Sheets Web App endpoint
+   */
+  async function testConnection(targetUrl) {
+    const url = (targetUrl || getSheetApiUrl()).trim();
+    if (!url) return { success: false, message: 'Please enter a Google Apps Script Web App URL.' };
+    try {
+      const pingUrl = url + (url.includes('?') ? '&' : '?') + 'action=ping';
+      const res = await fetch(pingUrl);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      return { success: true, message: data.message || 'Database connected successfully!' };
+    } catch (e) {
+      return { success: false, message: 'Could not connect to database endpoint: ' + e.message };
+    }
+  }
+
+  /**
+   * Fetch live properties from Google Sheet database in background
+   */
+  async function fetchLiveProperties() {
+    const apiUrl = getSheetApiUrl();
+    if (!apiUrl) return;
+
+    try {
+      let fetchUrl = apiUrl;
+      if (typeof window !== 'undefined' && window.AuthManager && window.AuthManager.isAuthenticated()) {
+        fetchUrl += (apiUrl.includes('?') ? '&' : '?') + 'password=Stallion@2026';
+      }
+
+      const res = await fetch(fetchUrl);
+      if (!res.ok) return;
+      const remoteList = await res.json();
+
+      if (Array.isArray(remoteList) && remoteList.length > 0) {
+        const normalized = remoteList.map(normalizeProperty);
+        saveToLocalStorage(normalized);
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('properties-updated', { detail: normalized }));
+        }
+      }
+    } catch (e) {
+      console.warn('[Stallion] Live cloud database sync error:', e);
+    }
+  }
+
   // Run immediate hydration upon script initialization
   hydrateFromUrl();
+
+  // Background fetch latest listings from Google Sheet if connected
+  if (typeof window !== 'undefined') {
+    setTimeout(fetchLiveProperties, 60);
+  }
 
   return {
     /**
@@ -521,6 +598,87 @@ if (typeof window !== 'undefined') {
   window.PROPERTIES_DATA = PROPERTIES_DATA;
 }
 `;
+    },
+
+    /**
+     * Cloud & Google Sheet live database methods
+     */
+    getSheetApiUrl,
+    setSheetApiUrl,
+    fetchLiveProperties,
+    testConnection,
+
+    /**
+     * Save/update a single property in Google Sheet live database
+     */
+    async saveToCloud(propData, password = 'Stallion@2026') {
+      const apiUrl = getSheetApiUrl();
+      if (!apiUrl) return { success: false, message: 'Google Sheet database URL not configured.' };
+
+      try {
+        const payload = {
+          password: password,
+          action: 'saveProperty',
+          property: propData
+        };
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        return await res.json();
+      } catch (e) {
+        return { success: false, message: e.toString() };
+      }
+    },
+
+    /**
+     * Delete a single property from Google Sheet live database
+     */
+    async deleteFromCloud(id, password = 'Stallion@2026') {
+      const apiUrl = getSheetApiUrl();
+      if (!apiUrl) return { success: false, message: 'Google Sheet database URL not configured.' };
+
+      try {
+        const payload = {
+          password: password,
+          action: 'deleteProperty',
+          id: id
+        };
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        return await res.json();
+      } catch (e) {
+        return { success: false, message: e.toString() };
+      }
+    },
+
+    /**
+     * Synchronize entire properties catalog to Google Sheet live database
+     */
+    async syncAllToCloud(password = 'Stallion@2026') {
+      const apiUrl = getSheetApiUrl();
+      if (!apiUrl) return { success: false, message: 'Google Sheet database URL not configured.' };
+
+      try {
+        const all = this.getAll();
+        const payload = {
+          password: password,
+          action: 'syncAll',
+          properties: all
+        };
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        return await res.json();
+      } catch (e) {
+        return { success: false, message: e.toString() };
+      }
     }
   };
 })();

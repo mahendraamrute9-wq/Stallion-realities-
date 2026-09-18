@@ -9,6 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initPropertyDetails();
 });
 
+let hasAttachedUpdateListener = false;
+
 function initPropertyDetails() {
   const container = document.getElementById('propertyDetailsRoot');
   if (!container) return;
@@ -34,16 +36,43 @@ function initPropertyDetails() {
   }
 
   if (!prop) {
-    container.innerHTML = `
-      <div class="no-results-box" style="margin: 60px 0;">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
-        <h3>Property Listing Not Found</h3>
-        <p style="color: var(--text-muted); margin-bottom: 24px;">
-          The property you are looking for may have been updated or removed from the demo catalog.
-        </p>
-        <a href="properties.html" class="btn btn-gold">Browse All Properties</a>
-      </div>
-    `;
+    // If cloud database is configured, wait for fetch to complete
+    const isCloudConfigured = window.PropertyStorage && window.PropertyStorage.getSheetApiUrl();
+    if (isCloudConfigured) {
+      container.innerHTML = `
+        <div class="no-results-box" style="margin: 60px 0;">
+          <div style="font-size: 1.2rem; font-weight: 600; color: var(--gold-light); margin-bottom: 8px;">Loading Property Listing...</div>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Fetching verified details from Stallion Realties database...</p>
+        </div>
+      `;
+      // Timeout fallback if property really doesn't exist
+      setTimeout(() => {
+        const checkAgain = window.PropertyStorage ? window.PropertyStorage.getById(propertyId) : null;
+        if (!checkAgain) {
+          container.innerHTML = `
+            <div class="no-results-box" style="margin: 60px 0;">
+              <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+              <h3>Property Listing Not Found</h3>
+              <p style="color: var(--text-muted); margin-bottom: 24px;">
+                The property you are looking for may have been updated or removed from the catalog.
+              </p>
+              <a href="properties.html" class="btn btn-gold">Browse All Properties</a>
+            </div>
+          `;
+        }
+      }, 4000);
+    } else {
+      container.innerHTML = `
+        <div class="no-results-box" style="margin: 60px 0;">
+          <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
+          <h3>Property Listing Not Found</h3>
+          <p style="color: var(--text-muted); margin-bottom: 24px;">
+            The property you are looking for may have been updated or removed from the demo catalog.
+          </p>
+          <a href="properties.html" class="btn btn-gold">Browse All Properties</a>
+        </div>
+      `;
+    }
     return;
   }
 
@@ -55,6 +84,14 @@ function initPropertyDetails() {
   initGallerySwitcher();
   initDetailsEnquiryForm(prop);
   renderSimilarProperties(prop.id);
+}
+
+// React to live database updates
+if (!hasAttachedUpdateListener) {
+  hasAttachedUpdateListener = true;
+  window.addEventListener('properties-updated', () => {
+    initPropertyDetails();
+  });
 }
 
 function renderDetailsHTML(container, prop) {
