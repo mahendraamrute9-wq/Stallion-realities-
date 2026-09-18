@@ -1,4 +1,4 @@
-﻿/**
+/**
  * ==============================================================================
  * STALLION REALTIES - SYSTEM CONFIGURATION
  * ==============================================================================
@@ -10,5 +10,5 @@
 
 window.STALLION_CONFIG = {
   // Google Apps Script Web App Endpoint URL (e.g., https://script.google.com/macros/s/.../exec)
-  SHEET_API_URL: ''
+  SHEET_API_URL: 'https://script.google.com/macros/s/AKfycbxDismbEYb6vtYAsbztfzNu_FFLDkRXFogV6ajAzMH5OSUXtSFj4TbN8V_mwZK6Gr8cew/exec'
 };
