@@ -734,9 +734,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Save/update mirror in local storage
     PropertyStorage.syncRepository();
 
-    // Automatically export/download updated properties-data.js for repository backup
-    PropertyStorage.exportDataFile();
-
     if (confirmBtn) {
       confirmBtn.disabled = false;
       confirmBtn.innerHTML = origBtnText;
@@ -815,12 +812,6 @@ document.addEventListener('DOMContentLoaded', () => {
         window.showToast('Copied website link to clipboard!', 'success');
       }
     }
-  });
-
-  // Download file button inside modal
-  document.getElementById('downloadLiveSyncFileBtn')?.addEventListener('click', () => {
-    PropertyStorage.exportDataFile();
-    window.showToast('Downloaded properties-data.js!', 'success');
   });
 
   // Share Website Link (permanent URL)
