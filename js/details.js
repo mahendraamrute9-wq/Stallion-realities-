@@ -352,59 +352,71 @@ function initDetailsEnquiryForm(prop) {
   const form = document.getElementById('detailsQuickForm');
   if (!form) return;
 
-  form.addEventListener('submit', (e) => {
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const name = document.getElementById('detailName')?.value.trim();
     const phone = document.getElementById('detailPhone')?.value.trim();
-    const note = document.getElementById('detailNote')?.value.trim();
+    const note = document.getElementById('detailNote')?.value.trim() || 'Interested in scheduling a private viewing';
 
     if (!name || !phone) {
-      window.showToast('Please provide your name and phone number.', 'error');
+      alert('Please provide your name and phone number.');
       return;
     }
 
-    const cleanPhone = phone.replace(/[^0-9+]/g, '');
-    if (cleanPhone.length < 8) {
-      window.showToast('Please enter a valid contact phone number.', 'error');
-      return;
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const origBtnText = submitBtn ? submitBtn.innerHTML : 'Request Tour Confirmation';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = 'Sending to Stallion Realties...';
     }
 
-    // Target WhatsApp Number
-    const targetWhatsApp = (prop.whatsappNumber && !prop.whatsappNumber.includes('[YOUR'))
-      ? prop.whatsappNumber.replace(/[^0-9]/g, '')
-      : '919925027051';
+    const payload = {
+      action: 'tourRequest',
+      name: name,
+      phone: phone,
+      notes: note,
+      tourDate: note,
+      propertyId: prop.id,
+      propertyTitle: prop.title,
+      price: prop.priceDisplay,
+      location: prop.location,
+      _subject: `New Private Tour Request: ${prop.title} (${name})`,
+      _template: 'table',
+      _captcha: 'false'
+    };
 
-    // Format WhatsApp private tour inquiry text
-    const messageLines = [
-      `*Private Tour Request - Stallion Realties*`,
-      ``,
-      `*Property:* ${prop.title} (ID: ${prop.id})`,
-      `*Price:* ${prop.priceDisplay}`,
-      `*Location:* ${prop.location}`,
-      `*Status:* ${prop.availability || 'Available'}`,
-      ``,
-      `*Client Details:*`,
-      `• *Name:* ${name}`,
-      `• *Phone:* ${phone}`
-    ];
-
-    if (note) {
-      messageLines.push(`• *Preferred Date / Requirements:* ${note}`);
+    // 1. Send to Google Sheets live database backend (which also sends email alert)
+    const sheetApiUrl = window.PropertyStorage ? window.PropertyStorage.getSheetApiUrl() : '';
+    if (sheetApiUrl) {
+      fetch(sheetApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.warn('[Stallion] Sheet tour request error:', err));
     }
 
-    messageLines.push(``);
-    messageLines.push(`Please confirm the private tour schedule and address.`);
+    // 2. Send directly to stallionrealities2026@gmail.com via FormSubmit
+    try {
+      await fetch('https://formsubmit.co/ajax/stallionrealities2026@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+    } catch (fsErr) {
+      console.warn('[Stallion] FormSubmit error:', fsErr);
+    }
 
-    const fullMessage = messageLines.join('\n');
-    const waUrl = `https://wa.me/${targetWhatsApp}?text=${encodeURIComponent(fullMessage)}`;
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = origBtnText;
+    }
 
-    // Show toast feedback and redirect to WhatsApp
-    window.showToast(`Thank you, ${name}! Redirecting to WhatsApp to confirm your tour...`, 'success');
-
-    setTimeout(() => {
-      window.open(waUrl, '_blank');
-      form.reset();
-    }, 600);
+    // Success feedback
+    window.showToast(`Thank you, ${name}! Your viewing request for "${prop.title}" has been sent to our team at stallionrealities2026@gmail.com. We will contact you at ${phone} shortly.`, 'success');
+    form.reset();
   });
 }
 

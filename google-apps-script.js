@@ -164,12 +164,18 @@ function doPost(e) {
       body = e.parameter || {};
     }
 
+    var action = body.action || "saveProperty";
+
+    // Public actions: Tour Requests & Inquiries (No admin password required)
+    if (action === "tourRequest" || action === "submitInquiry") {
+      return handleClientInquiry(body);
+    }
+
     // Security check: verify admin password
     if (body.password !== ADMIN_PASSWORD) {
       return jsonResponse({ success: false, message: "Unauthorized: Invalid admin password." });
     }
 
-    var action = body.action || "saveProperty";
     var sheet = getOrCreateSheet();
 
     if (action === "saveProperty") {
@@ -298,3 +304,83 @@ function jsonResponse(data) {
   return ContentService.createTextOutput(JSON.stringify(data))
     .setMimeType(ContentService.MimeType.JSON);
 }
+
+/**
+ * Handle public client inquiries and tour bookings:
+ * 1. Sends email notification directly to stallionrealities2026@gmail.com
+ * 2. Logs client lead into "Inquiries" sheet tab
+ */
+function handleClientInquiry(body) {
+  var name = body.name || "Prospective Client";
+  var phone = body.phone || "";
+  var email = body.email || "";
+  var propertyId = body.propertyId || "";
+  var propertyTitle = body.propertyTitle || (body.interest ? "Interest in " + body.interest : "General Property Inquiry");
+  var message = body.message || body.notes || body.note || "";
+  var tourDate = body.tourDate || "";
+  var type = body.action === "tourRequest" ? "Private Tour Request" : "Website Contact Inquiry";
+
+  var recipient = "stallionrealities2026@gmail.com";
+  var subject = "New Lead: " + (propertyTitle ? propertyTitle : type) + " (" + name + ")";
+
+  var bodyText = 
+    "Hello Stallion Realties,\n\n" +
+    "You have received a new inquiry from your official website:\n\n" +
+    "--------------------------------------------------\n" +
+    "TYPE: " + type + "\n" +
+    "PROPERTY: " + propertyTitle + (propertyId ? " (Ref ID: " + propertyId + ")" : "") + "\n" +
+    "CLIENT NAME: " + name + "\n" +
+    "PHONE NUMBER: " + phone + "\n" +
+    (email ? "EMAIL: " + email + "\n" : "") +
+    (tourDate ? "PREFERRED DATE / REQ: " + tourDate + "\n" : "") +
+    (message ? "MESSAGE / NOTES: " + message + "\n" : "") +
+    "SUBMITTED AT: " + new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }) + " IST\n" +
+    "--------------------------------------------------\n\n" +
+    "Quick Actions:\n" +
+    "- Call Client: " + phone + "\n" +
+    "- WhatsApp Client: https://wa.me/" + String(phone).replace(/[^0-9]/g, "") + "\n\n" +
+    "— Stallion Realties Live Website Automated Lead Notification";
+
+  try {
+    MailApp.sendEmail({
+      to: recipient,
+      subject: subject,
+      body: bodyText
+    });
+  } catch (err) {
+    Logger.log("Mail error: " + err);
+  }
+
+  // Also log into "Inquiries" sheet tab in the Google Sheet for backup
+  try {
+    var ss = SpreadsheetApp.getActiveSpreadsheet();
+    var sheet = ss.getSheetByName("Inquiries");
+    if (!sheet) {
+      sheet = ss.insertSheet("Inquiries");
+      sheet.appendRow(["Timestamp", "Type", "Property Title", "Property ID", "Client Name", "Phone", "Email", "Notes / Message"]);
+      sheet.getRange(1, 1, 1, 8)
+        .setBackground("#1A233A")
+        .setFontColor("#C9A050")
+        .setFontWeight("bold");
+      sheet.setFrozenRows(1);
+    }
+    sheet.appendRow([
+      new Date().toISOString(),
+      type,
+      propertyTitle,
+      propertyId,
+      name,
+      phone ? ("'" + phone) : "",
+      email,
+      message || tourDate
+    ]);
+  } catch (sheetErr) {
+    Logger.log("Sheet log error: " + sheetErr);
+  }
+
+  return jsonResponse({
+    success: true,
+    message: "Thank you! Your request has been sent to stallionrealities2026@gmail.com and our team will contact you shortly."
+  });
+}
+

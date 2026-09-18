@@ -42,7 +42,7 @@ function initContactForm() {
       return;
     }
 
-    // Submit Simulation & Feedback
+    // Submit to Google Sheet & Gmail
     const submitBtn = contactForm.querySelector('button[type="submit"]');
     const originalText = submitBtn.innerHTML;
 
@@ -54,24 +54,50 @@ function initContactForm() {
       Sending Enquiry...
     `;
 
-    const waText = 
-      `*New Contact Enquiry - Stallion Realties*\n\n` +
-      `• *Name:* ${name}\n` +
-      `• *Phone:* ${phone}\n` +
-      `• *Email:* ${email}\n` +
-      `• *Interest:* ${interest || 'Property Inquiry'}\n` +
-      `• *Message:* ${message}\n\n` +
-      `Please get in touch with me regarding this enquiry.`;
+    const payload = {
+      action: 'submitInquiry',
+      name: name,
+      phone: phone,
+      email: email,
+      interest: interest || 'General Property Assistance',
+      message: message,
+      _subject: `New Contact Enquiry: ${name} (${interest || 'General'})`,
+      _template: 'table',
+      _captcha: 'false'
+    };
 
-    const waUrl = `https://wa.me/919925027051?text=${encodeURIComponent(waText)}`;
+    // 1. Google Apps Script live database & email
+    const sheetApiUrl = window.PropertyStorage ? window.PropertyStorage.getSheetApiUrl() : '';
+    if (sheetApiUrl) {
+      fetch(sheetApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      }).catch(err => console.warn('[Stallion] Contact sheet error:', err));
+    }
+
+    // 2. Direct to Gmail via FormSubmit
+    try {
+      fetch('https://formsubmit.co/ajax/stallionrealities2026@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      }).catch(fsErr => console.warn('[Stallion] FormSubmit error:', fsErr));
+    } catch (e) {}
 
     setTimeout(() => {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalText;
       contactForm.reset();
 
-      window.showToast(`Thank you, ${name}! Redirecting to WhatsApp to send your enquiry...`, 'success');
-      window.open(waUrl, '_blank');
-    }, 600);
+      // Show confirmation
+      window.showToast(
+        `Thank you, ${name}! Your enquiry has been delivered to stallionrealities2026@gmail.com. Our team will get in touch with you shortly.`,
+        'success'
+      );
+    }, 800);
   });
 }
