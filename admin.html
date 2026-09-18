@@ -622,30 +622,24 @@
     <div class="admin-sync-banner" id="adminSyncBanner">
       <div class="sync-banner-info">
         <div class="sync-status-indicator">
-          <span class="status-pulse-dot"></span>
-          <span class="sync-status-text"><strong>Website Host:</strong> GitHub Pages &bull; Repo: <code style="color: var(--gold-light); font-size: 0.85rem;">mahendraamrute9-wq/Stallion-realities-</code></span>
+          <span class="status-pulse-dot" id="liveSyncStatusDot"></span>
+          <span class="sync-status-text" id="liveSyncStatusText"><strong>Live Website Sync:</strong> Ready &bull; Host: GitHub Pages</span>
         </div>
         <div class="sync-banner-desc">
-          Properties added here are stored in your dashboard. To make them visible to <strong>all clients visiting your website</strong> and on shared links:
+          Properties added here can be synced directly to your live website using your admin password:
         </div>
       </div>
       <div class="sync-banner-actions">
-        <!-- 1. Publish to Live Website (GitHub) -->
-        <button type="button" id="publishToGithubBtn" class="btn btn-gold btn-sm" title="Publish all changes to GitHub Pages so every visitor sees them">
+        <!-- 1. Live Sync to Website (Password Confirmation) -->
+        <button type="button" id="openLiveSyncBtn" class="btn btn-gold btn-sm" title="Live sync all properties to website using your admin password">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
-          Publish to Live Website
+          Live Sync to Website
         </button>
 
         <!-- 2. Share Website Link with Added Properties -->
-        <button type="button" id="shareWebsiteLinkBtn" class="btn btn-secondary btn-sm" title="Share website link containing all added properties">
+        <button type="button" id="shareWebsiteLinkBtn" class="btn btn-secondary btn-sm" title="Copy website link containing all added properties">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M3.9 12c0-1.71 1.39-3.1 3.1-3.1h4V7H7c-2.76 0-5 2.24-5 5s2.24 5 5 5h4v-1.9H7c-1.71 0-3.1-1.39-3.1-3.1zM8 13h8v-2H8v2zm9-6h-4v1.9h4c1.71 0 3.1 1.39 3.1 3.1s-1.39 3.1-3.1 3.1h-4V17h4c2.76 0 5-2.24 5-5s-2.24-5-5-5z"/></svg>
-          Share Website Link
-        </button>
-
-        <!-- 3. Configure GitHub Sync Settings -->
-        <button type="button" id="configGithubBtn" class="btn btn-secondary btn-sm" title="Configure GitHub token for automatic 1-click publishing">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
-          Sync Setup
+          Copy Website Link
         </button>
       </div>
     </div>
@@ -990,56 +984,71 @@
   </div>
 
   <!-- ========================================================================
-       MODAL: GITHUB LIVE WEBSITE SYNC SETUP
+       MODAL: LIVE WEBSITE SYNC (PASSWORD VERIFIED)
        ======================================================================== -->
-  <div id="githubSyncModal" class="modal-overlay" aria-hidden="true">
+  <div id="liveSyncModal" class="modal-overlay" aria-hidden="true">
     <div class="modal-card" style="max-width: 580px;">
       <div class="modal-header">
         <div>
-          <h3 class="modal-title" style="font-size: 1.25rem;">Live Website Publishing</h3>
-          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Sync properties directly to your live GitHub Pages website</p>
+          <h3 class="modal-title" style="font-size: 1.25rem;">Live Website Sync</h3>
+          <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 2px;">Sync and activate all added properties for all clients</p>
         </div>
-        <button id="closeGithubModalBtn" class="modal-close"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
+        <button id="closeLiveSyncModalBtn" class="modal-close"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg></button>
       </div>
 
       <div class="modal-body" style="padding: 22px 28px;">
-        <div style="background: rgba(201, 160, 80, 0.08); border: 1px solid var(--gold-border); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 18px; font-size: 0.86rem; line-height: 1.5; color: var(--text-secondary);">
-          <strong style="color: #fff;">Repository Target:</strong> <span style="color: var(--gold-light);">mahendraamrute9-wq/Stallion-realities-</span><br/>
-          <strong style="color: #fff;">Target File:</strong> <span style="color: var(--gold-light);">js/properties-data.js</span> (Branch: <code>main</code>)
+        <div id="liveSyncPromptSection">
+          <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 16px; line-height: 1.5;">
+            Please enter your <strong>admin login password</strong> to confirm and activate live website synchronization for all visitors:
+          </p>
+
+          <div class="form-field" style="margin-bottom: 16px;">
+            <label for="liveSyncPasswordInput" style="font-size: 0.85rem; font-weight: 600; color: var(--gold-light); margin-bottom: 6px; display: block;">
+              Admin Password
+            </label>
+            <input 
+              type="password" 
+              id="liveSyncPasswordInput" 
+              class="form-input" 
+              placeholder="Enter your admin login password" 
+              autocomplete="current-password"
+            />
+          </div>
+
+          <div id="liveSyncErrorMsg" style="display: none; color: var(--accent-red); font-size: 0.85rem; margin-bottom: 12px; font-weight: 600;"></div>
         </div>
 
-        <div class="form-field" style="margin-bottom: 16px;">
-          <label for="githubTokenInput" style="font-size: 0.85rem; font-weight: 600; color: var(--gold-light); margin-bottom: 6px; display: block;">
-            GitHub Personal Access Token (PAT)
+        <!-- Success Results Section -->
+        <div id="liveSyncSuccessSection" style="display: none;">
+          <div style="background: rgba(16, 185, 129, 0.12); border: 1px solid var(--accent-green); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 18px; font-size: 0.9rem; color: #fff; line-height: 1.5;">
+            <strong style="color: var(--accent-green);">&#10003; Live Sync Active!</strong><br/>
+            All added and updated properties are bundled and ready for visitors and link sharing.
+          </div>
+
+          <label style="font-size: 0.82rem; font-weight: 600; color: var(--gold-light); margin-bottom: 6px; display: block;">
+            Live Website Share Link (Clients will see all added properties):
           </label>
-          <input 
-            type="password" 
-            id="githubTokenInput" 
-            class="form-input" 
-            placeholder="ghp_xxxxxxxxxxxxxxxxxxxx or github_pat_xxxx" 
-            autocomplete="off"
-          />
-          <span style="font-size: 0.78rem; color: var(--text-muted); margin-top: 5px; display: block;">
-            Your token is stored safely in your admin browser's private local storage. It is never exposed publicly.
-          </span>
-        </div>
+          <div class="share-copy-box" style="margin-bottom: 16px;">
+            <input type="text" id="liveSyncUrlInput" class="share-copy-input" readonly />
+            <button type="button" id="copyLiveSyncUrlBtn" class="share-copy-btn">Copy Link</button>
+          </div>
 
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-sm); padding: 14px; font-size: 0.82rem; color: var(--text-muted); line-height: 1.5;">
-          <strong style="color: var(--gold-light); display: block; margin-bottom: 6px;">How to get your token (takes 30 seconds):</strong>
-          <ol style="margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px;">
-            <li>Go to <a href="https://github.com/settings/tokens/new?scopes=repo&description=Stallion+Realties+Admin+Sync" target="_blank" rel="noopener noreferrer" style="color: var(--gold-light); text-decoration: underline;">GitHub Token Generator</a></li>
-            <li>Give it a description (e.g. <em>Stallion Admin Sync</em>) and ensure <strong>repo</strong> is checked.</li>
-            <li>Click <strong>Generate token</strong>, copy it, and paste it above!</li>
-          </ol>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a id="waLiveSyncBtn" href="#" target="_blank" rel="noopener noreferrer" class="btn btn-sm" style="background: #25d366; color: #fff; text-decoration: none; display: inline-flex; align-items: center; gap: 6px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2Z"/></svg>
+              Share via WhatsApp
+            </a>
+            <button type="button" id="downloadLiveSyncFileBtn" class="btn btn-secondary btn-sm">
+              Download properties-data.js
+            </button>
+          </div>
         </div>
-
-        <div id="githubSyncStatus" style="margin-top: 14px; font-size: 0.85rem; display: none;"></div>
       </div>
 
-      <div class="modal-footer">
-        <button id="cancelGithubModalBtn" class="btn btn-secondary btn-sm">Close</button>
-        <button id="saveAndPublishGithubBtn" class="btn btn-gold btn-sm">
-          Save Token &amp; Publish Now
+      <div class="modal-footer" id="liveSyncModalFooter">
+        <button id="cancelLiveSyncModalBtn" class="btn btn-secondary btn-sm">Cancel</button>
+        <button id="confirmLiveSyncBtn" class="btn btn-gold btn-sm">
+          Confirm &amp; Live Sync
         </button>
       </div>
     </div>

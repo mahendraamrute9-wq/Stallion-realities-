@@ -140,6 +140,17 @@ const AuthManager = (() => {
     },
 
     /**
+     * Verify admin password (matches login credentials)
+     */
+    async verifyPassword(password) {
+      if (!password) return false;
+      const salt = getStoredSalt();
+      const expectedHash = getStoredHash();
+      const inputHash = await hashString(salt + password);
+      return inputHash === expectedHash;
+    },
+
+    /**
      * Get active logged in username
      */
     getCurrentUser() {

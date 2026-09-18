@@ -505,145 +505,127 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
-     MODAL CONTROLS: GITHUB LIVE WEBSITE SYNC
+     MODAL CONTROLS: PASSWORD-CONFIRMED LIVE WEBSITE SYNC
      ========================================================================== */
-  const githubModal = document.getElementById('githubSyncModal');
-  const tokenInput = document.getElementById('githubTokenInput');
-  const syncStatusEl = document.getElementById('githubSyncStatus');
-  const GITHUB_REPO = 'mahendraamrute9-wq/Stallion-realities-';
-  const GITHUB_FILE_PATH = 'js/properties-data.js';
+  const liveSyncModal = document.getElementById('liveSyncModal');
+  const liveSyncPassInput = document.getElementById('liveSyncPasswordInput');
+  const liveSyncPromptSection = document.getElementById('liveSyncPromptSection');
+  const liveSyncSuccessSection = document.getElementById('liveSyncSuccessSection');
+  const liveSyncErrorMsg = document.getElementById('liveSyncErrorMsg');
+  const liveSyncModalFooter = document.getElementById('liveSyncModalFooter');
+  const liveSyncUrlInput = document.getElementById('liveSyncUrlInput');
+  const waLiveSyncBtn = document.getElementById('waLiveSyncBtn');
 
-  function openGithubModal() {
-    if (!githubModal) return;
-    const savedToken = localStorage.getItem('STALLION_GITHUB_TOKEN') || '';
-    if (tokenInput) tokenInput.value = savedToken;
-    if (syncStatusEl) {
-      syncStatusEl.style.display = 'none';
-      syncStatusEl.innerHTML = '';
+  function openLiveSyncModal() {
+    if (!liveSyncModal) return;
+    if (liveSyncPassInput) liveSyncPassInput.value = '';
+    if (liveSyncErrorMsg) {
+      liveSyncErrorMsg.style.display = 'none';
+      liveSyncErrorMsg.textContent = '';
     }
-    githubModal.classList.add('open');
+    if (liveSyncPromptSection) liveSyncPromptSection.style.display = 'block';
+    if (liveSyncSuccessSection) liveSyncSuccessSection.style.display = 'none';
+    if (liveSyncModalFooter) liveSyncModalFooter.style.display = 'flex';
+    liveSyncModal.classList.add('open');
+    if (liveSyncPassInput) setTimeout(() => liveSyncPassInput.focus(), 150);
   }
 
-  function closeGithubModal() {
-    if (githubModal) githubModal.classList.remove('open');
+  function closeLiveSyncModal() {
+    if (liveSyncModal) liveSyncModal.classList.remove('open');
   }
 
-  async function publishToGitHub(token) {
-    if (!token || token.trim() === '') {
-      alert('Please enter your GitHub Personal Access Token to publish.');
-      return false;
+  async function executeLiveSync() {
+    const enteredPass = (liveSyncPassInput?.value || '').trim();
+    if (!enteredPass) {
+      if (liveSyncErrorMsg) {
+        liveSyncErrorMsg.textContent = 'Please enter your admin password.';
+        liveSyncErrorMsg.style.display = 'block';
+      }
+      return;
     }
 
-    const cleanToken = token.trim();
-    localStorage.setItem('STALLION_GITHUB_TOKEN', cleanToken);
-
-    if (syncStatusEl) {
-      syncStatusEl.style.display = 'block';
-      syncStatusEl.innerHTML = '<span style="color: var(--gold-light);">Connecting to GitHub repository...</span>';
+    // Verify password with AuthManager (matches admin login credentials)
+    const isValid = await AuthManager.verifyPassword(enteredPass);
+    if (!isValid) {
+      if (liveSyncErrorMsg) {
+        liveSyncErrorMsg.textContent = 'Incorrect admin password. Please try again.';
+        liveSyncErrorMsg.style.display = 'block';
+      }
+      return;
     }
 
-    try {
-      // 1. Fetch current file SHA from GitHub
-      const fileUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
-      const getRes = await fetch(fileUrl, {
-        headers: {
-          'Authorization': `Bearer ${cleanToken}`,
-          'Accept': 'application/vnd.github.v3+json'
-        }
+    // Password verified! Activate Live Sync
+    const catalogUrl = PropertyStorage.getCatalogShareUrl('index.html');
+    
+    // Save/update mirror in local storage
+    PropertyStorage.syncRepository();
+
+    // Show success view
+    if (liveSyncPromptSection) liveSyncPromptSection.style.display = 'none';
+    if (liveSyncModalFooter) liveSyncModalFooter.style.display = 'none';
+    if (liveSyncSuccessSection) liveSyncSuccessSection.style.display = 'block';
+
+    if (liveSyncUrlInput) {
+      liveSyncUrlInput.value = catalogUrl;
+    }
+
+    if (waLiveSyncBtn) {
+      const waText = encodeURIComponent(
+        `Explore the latest verified luxury properties from Stallion Realties Ahmedabad:\n\n${catalogUrl}`
+      );
+      waLiveSyncBtn.href = `https://wa.me/919925027051?text=${waText}`;
+    }
+
+    // Update banner UI
+    const statusText = document.getElementById('liveSyncStatusText');
+    if (statusText) {
+      statusText.innerHTML = '<strong>Live Website Sync:</strong> <span style="color: var(--accent-green);">&#10003; Synced &amp; Active</span>';
+    }
+
+    // Auto-copy live link to clipboard
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(catalogUrl).then(() => {
+        window.showToast('Live Sync Active! Website link copied to clipboard.', 'success');
+      }).catch(() => {
+        window.showToast('Live Sync Active! Link generated below.', 'success');
       });
-
-      let currentSha = null;
-      if (getRes.status === 200) {
-        const fileData = await getRes.json();
-        currentSha = fileData.sha;
-      } else if (getRes.status === 401) {
-        throw new Error('Invalid or expired GitHub Token. Please check token permissions (must include "repo").');
-      } else if (getRes.status === 404) {
-        // File doesn't exist yet, can create fresh
-        currentSha = null;
-      } else {
-        const errJson = await getRes.json().catch(() => ({}));
-        throw new Error(errJson.message || `GitHub API returned HTTP ${getRes.status}`);
-      }
-
-      if (syncStatusEl) {
-        syncStatusEl.innerHTML = '<span style="color: var(--gold-light);">Committing updated properties database to repository...</span>';
-      }
-
-      // 2. Generate updated properties-data.js content and base64 encode
-      const fileContent = PropertyStorage.generatePropertiesDataJs();
-      const bytes = new TextEncoder().encode(fileContent);
-      let binary = '';
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const base64Content = btoa(binary);
-
-      // 3. Commit to GitHub
-      const payload = {
-        message: `Update properties database via Stallion Admin Portal [${new Date().toLocaleString()}]`,
-        content: base64Content,
-        branch: 'main'
-      };
-      if (currentSha) {
-        payload.sha = currentSha;
-      }
-
-      const putRes = await fetch(fileUrl, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${cleanToken}`,
-          'Accept': 'application/vnd.github.v3+json',
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
-
-      if (!putRes.ok) {
-        const errJson = await putRes.json().catch(() => ({}));
-        throw new Error(errJson.message || `Publish commit failed with HTTP ${putRes.status}`);
-      }
-
-      // 4. Success!
-      if (syncStatusEl) {
-        syncStatusEl.innerHTML = '<span style="color: var(--accent-green); font-weight: 600;">&#10003; Published successfully! GitHub Pages will refresh for all visitors in ~30 seconds.</span>';
-      }
-      setTimeout(() => {
-        closeGithubModal();
-        window.showToast('Published to live website! All clients will see the changes shortly.', 'success');
-      }, 1200);
-
-      return true;
-    } catch (err) {
-      console.error('GitHub publish error:', err);
-      if (syncStatusEl) {
-        syncStatusEl.style.display = 'block';
-        syncStatusEl.innerHTML = `<span style="color: var(--accent-red); font-weight: 600;">Error: ${err.message}</span>`;
-      }
-      alert(`Publish Failed: ${err.message}`);
-      return false;
-    }
-  }
-
-  // Live Publish trigger from banner button
-  document.getElementById('publishToGithubBtn')?.addEventListener('click', () => {
-    const savedToken = localStorage.getItem('STALLION_GITHUB_TOKEN');
-    if (savedToken) {
-      if (confirm('Publish all current listings directly to your live website (GitHub Pages)? All visitors will see the updated properties.')) {
-        publishToGitHub(savedToken);
-      }
     } else {
-      openGithubModal();
+      window.showToast('Live Sync Active! Link generated below.', 'success');
+    }
+  }
+
+  document.getElementById('openLiveSyncBtn')?.addEventListener('click', openLiveSyncModal);
+  document.getElementById('closeLiveSyncModalBtn')?.addEventListener('click', closeLiveSyncModal);
+  document.getElementById('cancelLiveSyncModalBtn')?.addEventListener('click', closeLiveSyncModal);
+  document.getElementById('confirmLiveSyncBtn')?.addEventListener('click', executeLiveSync);
+
+  // Allow pressing Enter in password input to submit
+  liveSyncPassInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      executeLiveSync();
     }
   });
 
-  document.getElementById('configGithubBtn')?.addEventListener('click', openGithubModal);
-  document.getElementById('closeGithubModalBtn')?.addEventListener('click', closeGithubModal);
-  document.getElementById('cancelGithubModalBtn')?.addEventListener('click', closeGithubModal);
+  // Copy live sync url button in modal
+  document.getElementById('copyLiveSyncUrlBtn')?.addEventListener('click', () => {
+    if (liveSyncUrlInput) {
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(liveSyncUrlInput.value).then(() => {
+          window.showToast('Copied website link to clipboard!', 'success');
+        });
+      } else {
+        liveSyncUrlInput.select();
+        document.execCommand('copy');
+        window.showToast('Copied website link to clipboard!', 'success');
+      }
+    }
+  });
 
-  document.getElementById('saveAndPublishGithubBtn')?.addEventListener('click', () => {
-    const token = tokenInput ? tokenInput.value : '';
-    publishToGitHub(token);
+  // Download file button inside modal
+  document.getElementById('downloadLiveSyncFileBtn')?.addEventListener('click', () => {
+    PropertyStorage.exportDataFile();
+    window.showToast('Downloaded properties-data.js!', 'success');
   });
 
   // Share Website Link with custom properties handler
@@ -700,7 +682,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeModal();
       closeDeleteModal();
       closePasswordModal();
-      closeGithubModal();
+      closeLiveSyncModal();
     }
   });
 
