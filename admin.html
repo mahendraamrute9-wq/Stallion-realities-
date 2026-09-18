@@ -624,6 +624,12 @@
               <th>Price</th>
               <th>Area</th>
               <th>Availability</th>
+              <th style="background: rgba(212, 175, 55, 0.08); border-left: 1px solid rgba(212, 175, 55, 0.2); border-right: 1px solid rgba(212, 175, 55, 0.2);">
+                <span style="color: var(--gold-light); display: inline-flex; align-items: center; gap: 4px;">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                  Owner Info (Admin Only)
+                </span>
+              </th>
               <th style="text-align: right;">Actions</th>
             </tr>
           </thead>
@@ -786,8 +792,8 @@
         <!-- WhatsApp Number & Featured Toggle -->
         <div class="form-grid-2">
           <div class="form-field">
-            <label for="propWhatsapp" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">Custom WhatsApp Contact (Optional)</label>
-            <input type="text" id="propWhatsapp" class="form-input" placeholder="e.g. 919876543210" />
+            <label for="propWhatsapp" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">Public Inquiry WhatsApp (Optional)</label>
+            <input type="text" id="propWhatsapp" class="form-input" placeholder="e.g. 919925027051" />
           </div>
 
           <div style="display: flex; align-items: center; gap: 10px; padding-top: 28px;">
@@ -795,6 +801,41 @@
             <label for="propFeatured" style="font-size: 0.9rem; color: #fff; font-weight: 600; cursor: pointer;">
               Feature on Homepage
             </label>
+          </div>
+        </div>
+
+        <!-- ==================================================================
+             CONFIDENTIAL OWNER DETAILS (VISIBLE TO ADMIN ONLY)
+             ================================================================== -->
+        <div style="background: rgba(212, 175, 55, 0.05); border: 1px dashed var(--gold-border); border-radius: var(--radius-md); padding: 18px; margin-top: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 12px;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="var(--gold-primary)"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 6c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 12c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+            <strong style="color: var(--gold-light); font-size: 0.95rem;">Confidential Owner Details (Private - Admin Only)</strong>
+            <span style="font-size: 0.72rem; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.4); color: #fca5a5; padding: 2px 8px; border-radius: 4px; margin-left: auto;">Hidden from Normal Users</span>
+          </div>
+
+          <div class="form-grid-2">
+            <div class="form-field">
+              <label for="propOwnerName" style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 6px; display: block;">Owner / Landlord Full Name</label>
+              <input type="text" id="propOwnerName" class="form-input" placeholder="e.g. Rameshchandra Patel" />
+            </div>
+
+            <div class="form-field">
+              <label for="propOwnerPhone" style="font-size: 0.85rem; font-weight: 600; color: #fff; margin-bottom: 6px; display: block;">Owner Contact Number / Mobile</label>
+              <input type="tel" id="propOwnerPhone" class="form-input" placeholder="e.g. +91 98250 12345" />
+            </div>
+          </div>
+
+          <div class="form-grid-2" style="margin-bottom: 0;">
+            <div class="form-field">
+              <label for="propOwnerEmail" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">Owner Email Address (Optional)</label>
+              <input type="email" id="propOwnerEmail" class="form-input" placeholder="e.g. ramesh.patel@example.com" />
+            </div>
+
+            <div class="form-field">
+              <label for="propOwnerNotes" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 6px; display: block;">Private Notes / Expected Minimum Deal Price</label>
+              <input type="text" id="propOwnerNotes" class="form-input" placeholder="e.g. Key with security guard, firm on price" />
+            </div>
           </div>
         </div>
       </form>

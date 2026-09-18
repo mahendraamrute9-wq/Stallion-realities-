@@ -71,7 +71,12 @@ const PROPERTIES_DATA = [
     ],
     availability: "Available",
     whatsappNumber: "919925027051",
-    contactLink: ""
+    contactLink: "",
+    // Confidential Owner Details (Admin Only)
+    ownerName: "Vikram Rathore",
+    ownerPhone: "+91 98250 44120",
+    ownerEmail: "vikram.rathore@example.com",
+    ownerNotes: "Immediate sale preferred; key available with clubhouse office."
   },
 
   /* --------------------------------------------------------------------------
@@ -110,7 +115,12 @@ const PROPERTIES_DATA = [
     ],
     availability: "Available",
     whatsappNumber: "919925027051",
-    contactLink: ""
+    contactLink: "",
+    // Confidential Owner Details (Admin Only)
+    ownerName: "Sunita & Arvind Mehta",
+    ownerPhone: "+91 94260 88319",
+    ownerEmail: "arvind.mehta@example.com",
+    ownerNotes: "Prefers corporate or family tenants on 11-month registered lease."
   },
 
   /* --------------------------------------------------------------------------
@@ -287,28 +297,44 @@ PROPERTIES_DATA.forEach(p => {
   }
 });
 
+// Sanitize helper to protect confidential owner info when public visitors query default repository
+function sanitizePropertyForPublic(p) {
+  if (!p) return null;
+  if (typeof window !== 'undefined' && window.AuthManager && window.AuthManager.isAuthenticated && window.AuthManager.isAuthenticated()) {
+    return p;
+  }
+  const clone = { ...p };
+  delete clone.ownerName;
+  delete clone.ownerPhone;
+  delete clone.ownerEmail;
+  delete clone.ownerNotes;
+  return clone;
+}
+
 // Helper repository for querying and filtering listings
 const PropertyRepository = {
-  getAll: () => PROPERTIES_DATA,
+  getAll: () => PROPERTIES_DATA.map(p => sanitizePropertyForPublic(p)),
   
   getById: (id) => {
     if (!id) return null;
-    return PROPERTIES_DATA.find(p => p.id.toLowerCase() === id.toLowerCase()) || null;
+    const found = PROPERTIES_DATA.find(p => p.id.toLowerCase() === id.toLowerCase());
+    return found ? sanitizePropertyForPublic(found) : null;
   },
   
   getFeatured: () => {
-    return PROPERTIES_DATA.filter(p => p.featured);
+    return PROPERTIES_DATA.filter(p => p.featured).map(p => sanitizePropertyForPublic(p));
   },
   
   getSimilar: (currentId, limit = 3) => {
     const current = PropertyRepository.getById(currentId);
-    if (!current) return PROPERTIES_DATA.slice(0, limit);
+    if (!current) return PROPERTIES_DATA.slice(0, limit).map(p => sanitizePropertyForPublic(p));
     return PROPERTIES_DATA
       .filter(p => p.id !== current.id && (
         p.type.toLowerCase() === current.type.toLowerCase() || 
         p.purpose.toLowerCase() === current.purpose.toLowerCase()
       ))
-      .slice(0, limit);
+      .slice(0, limit)
+      .map(p => sanitizePropertyForPublic(p));
   },
   
   filter: ({ purpose, status, type, location, minPrice, maxPrice, bedrooms, maxArea, availability }) => {
@@ -360,7 +386,7 @@ const PropertyRepository = {
       if (maxArea && p.area > Number(maxArea)) return false;
       
       return true;
-    });
+    }).map(p => sanitizePropertyForPublic(p));
   }
 };
 

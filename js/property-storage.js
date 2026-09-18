@@ -45,8 +45,31 @@ const PropertyStorage = (() => {
       features: Array.isArray(p.features) ? p.features : [],
       availability: p.availability || 'Available',
       whatsappNumber: (!p.whatsappNumber || p.whatsappNumber.includes('[YOUR')) ? '919925027051' : p.whatsappNumber,
-      contactLink: p.contactLink || ''
+      contactLink: p.contactLink || '',
+      // Owner Confidential Details (Admin Only)
+      ownerName: p.ownerName ? String(p.ownerName).trim() : '',
+      ownerPhone: p.ownerPhone ? String(p.ownerPhone).trim() : '',
+      ownerEmail: p.ownerEmail ? String(p.ownerEmail).trim() : '',
+      ownerNotes: p.ownerNotes ? String(p.ownerNotes).trim() : ''
     };
+  }
+
+  /**
+   * Strip sensitive owner confidential details for public visitors
+   */
+  function sanitizeForPublic(prop) {
+    if (!prop) return null;
+    // If admin is currently logged in, allow viewing owner details
+    if (typeof window !== 'undefined' && window.AuthManager && window.AuthManager.isAuthenticated()) {
+      return prop;
+    }
+    // Deep clone and remove owner details
+    const sanitized = { ...prop };
+    delete sanitized.ownerName;
+    delete sanitized.ownerPhone;
+    delete sanitized.ownerEmail;
+    delete sanitized.ownerNotes;
+    return sanitized;
   }
 
   /**
@@ -193,12 +216,12 @@ if (typeof window !== 'undefined') {
         window.PROPERTIES_DATA = allProps;
 
         if (window.PropertyRepository) {
-          window.PropertyRepository.getAll = () => self.getAll();
-          window.PropertyRepository.getById = (id) => self.getById(id);
+          window.PropertyRepository.getAll = () => self.getAll().map(p => sanitizeForPublic(p));
+          window.PropertyRepository.getById = (id) => sanitizeForPublic(self.getById(id));
           
           // Home page display: Always prioritize custom admin-added properties first!
           window.PropertyRepository.getFeatured = () => {
-            const all = self.getAll();
+            const all = self.getAll().map(p => sanitizeForPublic(p));
             const custom = all.filter(p => !p.isSample);
             const featured = all.filter(p => p.featured);
             
@@ -236,60 +259,63 @@ if (typeof window !== 'undefined') {
           window.PropertyRepository.filter = (criteria = {}) => {
             const all = self.getAll();
             const { purpose, status, type, location, minPrice, maxPrice, bedrooms, maxArea, availability } = criteria;
-            return all.filter(p => {
-              const targetPurpose = purpose || status;
-              if (targetPurpose && targetPurpose !== 'all') {
-                const pStatus = (p.status || '').toLowerCase();
-                const pPurpose = (p.purpose || '').toLowerCase();
-                const target = targetPurpose.toLowerCase();
+            return all
+              .filter(p => {
+                const targetPurpose = purpose || status;
+                if (targetPurpose && targetPurpose !== 'all') {
+                  const pStatus = (p.status || '').toLowerCase();
+                  const pPurpose = (p.purpose || '').toLowerCase();
+                  const target = targetPurpose.toLowerCase();
 
-                if (target === 'buy' || target === 'sale' || target === 'for sale') {
-                  if (pStatus !== 'sale' && !pPurpose.includes('sale')) return false;
-                } else if (target === 'rent' || target === 'for rent') {
-                  if (pStatus !== 'rent' && !pPurpose.includes('rent')) return false;
+                  if (target === 'buy' || target === 'sale' || target === 'for sale') {
+                    if (pStatus !== 'sale' && !pPurpose.includes('sale')) return false;
+                  } else if (target === 'rent' || target === 'for rent') {
+                    if (pStatus !== 'rent' && !pPurpose.includes('rent')) return false;
+                  }
                 }
-              }
 
-              if (availability && availability !== 'all') {
-                if ((p.availability || '').toLowerCase() !== availability.toLowerCase()) return false;
-              }
-              
-              if (type && type !== 'all' && (p.type || '').toLowerCase() !== type.toLowerCase()) {
-                return false;
-              }
-              
-              if (location && location.trim() !== '') {
-                const query = location.toLowerCase().trim();
-                const match = (p.location || '').toLowerCase().includes(query) || 
-                              (p.title || '').toLowerCase().includes(query);
-                if (!match) return false;
-              }
-              
-              if (minPrice && p.price < Number(minPrice)) return false;
-              if (maxPrice && p.price > Number(maxPrice)) return false;
-              
-              if (bedrooms && bedrooms !== 'all') {
-                if (!p.bedrooms) return false;
-                if (bedrooms === '4+' && p.bedrooms < 4) return false;
-                if (bedrooms !== '4+' && p.bedrooms !== Number(bedrooms)) return false;
-              }
-              
-              if (maxArea && p.area > Number(maxArea)) return false;
-              
-              return true;
-            });
+                if (availability && availability !== 'all') {
+                  if ((p.availability || '').toLowerCase() !== availability.toLowerCase()) return false;
+                }
+                
+                if (type && type !== 'all' && (p.type || '').toLowerCase() !== type.toLowerCase()) {
+                  return false;
+                }
+                
+                if (location && location.trim() !== '') {
+                  const query = location.toLowerCase().trim();
+                  const match = (p.location || '').toLowerCase().includes(query) || 
+                                (p.title || '').toLowerCase().includes(query);
+                  if (!match) return false;
+                }
+                
+                if (minPrice && p.price < Number(minPrice)) return false;
+                if (maxPrice && p.price > Number(maxPrice)) return false;
+                
+                if (bedrooms && bedrooms !== 'all') {
+                  if (!p.bedrooms) return false;
+                  if (bedrooms === '4+' && p.bedrooms < 4) return false;
+                  if (bedrooms !== '4+' && p.bedrooms !== Number(bedrooms)) return false;
+                }
+                
+                if (maxArea && p.area > Number(maxArea)) return false;
+                
+                return true;
+              })
+              .map(p => sanitizeForPublic(p));
           };
 
           window.PropertyRepository.getSimilar = (currentId, limit = 3) => {
             const current = self.getById(currentId);
             const all = self.getAll();
-            if (!current) return all.slice(0, limit);
+            if (!current) return all.slice(0, limit).map(p => sanitizeForPublic(p));
             return all
               .filter(p => p.id !== current.id && (
                 (p.type || '').toLowerCase() === (current.type || '').toLowerCase() ||
                 (p.purpose || '').toLowerCase() === (current.purpose || '').toLowerCase()
               ))
-              .slice(0, limit);
+              .slice(0, limit)
+              .map(p => sanitizeForPublic(p));
           };
         }
 

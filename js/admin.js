@@ -134,7 +134,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (filtered.length === 0) {
       tableBody.innerHTML = `
         <tr>
-          <td colspan="8" style="text-align: center; padding: 45px 20px; color: var(--text-muted);">
+          <td colspan="9" style="text-align: center; padding: 45px 20px; color: var(--text-muted);">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="var(--gold-primary)" style="margin-bottom: 8px;"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/></svg>
             <div style="font-size: 1.05rem; font-weight: 600; color: #fff;">No property listings match your filters</div>
             <div style="font-size: 0.85rem; margin-top: 4px;">Click "+ Add New Property" above to create a listing.</div>
@@ -154,6 +154,11 @@ document.addEventListener('DOMContentLoaded', () => {
       const thumbUrl = p.mainImage || (p.images && p.images[0]) || 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=120&q=80';
       const unit = p.areaUnit || 'sq. ft.';
 
+      // Confidential Owner details display
+      const ownerName = p.ownerName || '—';
+      const ownerPhone = p.ownerPhone ? `<a href="tel:${p.ownerPhone}" style="color: var(--gold-light); text-decoration: none; font-weight: 600;">${p.ownerPhone}</a>` : '<span style="color: var(--text-muted); font-size: 0.78rem;">Not set</span>';
+      const ownerWa = p.ownerPhone ? `<a href="https://wa.me/${p.ownerPhone.replace(/[^0-9]/g, '')}" target="_blank" rel="noopener" style="color: #25d366; margin-left: 6px; text-decoration: none;" title="Chat with Owner on WhatsApp">💬</a>` : '';
+
       return `
         <tr data-id="${p.id}">
           <td>
@@ -170,6 +175,13 @@ document.addEventListener('DOMContentLoaded', () => {
           <td><span style="color: var(--gold-light); font-weight: 700;">${p.priceDisplay}</span></td>
           <td>${p.area} ${unit}</td>
           <td><span class="badge ${availClass}">${avail}</span></td>
+          <td style="background: rgba(212, 175, 55, 0.03); border-left: 1px solid rgba(212, 175, 55, 0.15); border-right: 1px solid rgba(212, 175, 55, 0.15);">
+            <div style="font-size: 0.88rem; font-weight: 600; color: #fff;">${ownerName}</div>
+            <div style="font-size: 0.82rem; margin-top: 2px;">
+              ${ownerPhone} ${ownerWa}
+            </div>
+            ${p.ownerNotes ? `<div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 2px; max-width: 170px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${p.ownerNotes}">📝 ${p.ownerNotes}</div>` : ''}
+          </td>
           <td style="text-align: right;">
               <button class="btn-action btn-share-row share-btn" data-id="${p.id}" title="Share Listing" style="color: var(--gold-light); border-color: rgba(212, 175, 55, 0.4);">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
@@ -328,6 +340,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('propWhatsapp').value = prop.whatsappNumber && !prop.whatsappNumber.includes('[YOUR') ? prop.whatsappNumber : '';
     document.getElementById('propFeatured').checked = Boolean(prop.featured);
 
+    // Populate Confidential Owner Details
+    document.getElementById('propOwnerName').value = prop.ownerName || '';
+    document.getElementById('propOwnerPhone').value = prop.ownerPhone || '';
+    document.getElementById('propOwnerEmail').value = prop.ownerEmail || '';
+    document.getElementById('propOwnerNotes').value = prop.ownerNotes || '';
+
     // Set images
     currentMainImage = prop.mainImage || (prop.images && prop.images[0]) || '';
     if (currentMainImage) {
@@ -370,6 +388,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const featured = document.getElementById('propFeatured').checked;
     const existingId = document.getElementById('propId').value;
 
+    // Confidential Owner Details
+    const ownerName = document.getElementById('propOwnerName').value.trim();
+    const ownerPhone = document.getElementById('propOwnerPhone').value.trim();
+    const ownerEmail = document.getElementById('propOwnerEmail').value.trim();
+    const ownerNotes = document.getElementById('propOwnerNotes').value.trim();
+
     // Fallback display price if user left it blank
     if (!priceDisplay) {
       priceDisplay = purpose === 'For Rent' 
@@ -410,7 +434,12 @@ document.addEventListener('DOMContentLoaded', () => {
       additionalImages: currentAdditionalImages,
       images: allImages,
       whatsappNumber: whatsapp || '919925027051',
-      featured
+      featured,
+      // Owner Confidential Details
+      ownerName,
+      ownerPhone,
+      ownerEmail,
+      ownerNotes
     };
 
     PropertyStorage.save(propData);
