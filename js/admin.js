@@ -555,10 +555,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Password verified! Activate Live Sync
-    const catalogUrl = PropertyStorage.getCatalogShareUrl('index.html');
+    const isLive = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
+    const catalogUrl = isLive 
+      ? 'https://mahendraamrute9-wq.github.io/Stallion-realities-/'
+      : PropertyStorage.getCatalogShareUrl('index.html');
     
     // Save/update mirror in local storage
     PropertyStorage.syncRepository();
+
+    // Automatically export/download updated properties-data.js
+    PropertyStorage.exportDataFile();
 
     // Show success view
     if (liveSyncPromptSection) liveSyncPromptSection.style.display = 'none';
@@ -571,7 +577,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (waLiveSyncBtn) {
       const waText = encodeURIComponent(
-        `Explore the latest verified luxury properties from Stallion Realties Ahmedabad:\n\n${catalogUrl}`
+        `Explore the verified luxury properties from Stallion Realties Ahmedabad:\n\n${catalogUrl}`
       );
       waLiveSyncBtn.href = `https://wa.me/919925027051?text=${waText}`;
     }
@@ -582,7 +588,7 @@ document.addEventListener('DOMContentLoaded', () => {
       statusText.innerHTML = '<strong>Live Website Sync:</strong> <span style="color: var(--accent-green);">&#10003; Synced &amp; Active</span>';
     }
 
-    // Auto-copy live link to clipboard
+    // Auto-copy permanent link to clipboard
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(catalogUrl).then(() => {
         window.showToast('Live Sync Active! Website link copied to clipboard.', 'success');
@@ -628,17 +634,20 @@ document.addEventListener('DOMContentLoaded', () => {
     window.showToast('Downloaded properties-data.js!', 'success');
   });
 
-  // Share Website Link with custom properties handler
+  // Share Website Link (permanent URL)
   document.getElementById('shareWebsiteLinkBtn')?.addEventListener('click', () => {
-    const catalogUrl = PropertyStorage.getCatalogShareUrl('index.html');
+    const isLive = typeof window !== 'undefined' && window.location.hostname.includes('github.io');
+    const catalogUrl = isLive 
+      ? 'https://mahendraamrute9-wq.github.io/Stallion-realities-/'
+      : PropertyStorage.getCatalogShareUrl('index.html');
     if (navigator.clipboard && window.isSecureContext) {
       navigator.clipboard.writeText(catalogUrl).then(() => {
-        window.showToast('Copied website link with all added properties to clipboard!', 'success');
+        window.showToast('Copied website link to clipboard!', 'success');
       }).catch(() => {
-        prompt('Copy this link to share your website with all added properties:', catalogUrl);
+        prompt('Website link:', catalogUrl);
       });
     } else {
-      prompt('Copy this link to share your website with all added properties:', catalogUrl);
+      prompt('Website link:', catalogUrl);
     }
   });
 

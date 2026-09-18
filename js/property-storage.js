@@ -463,11 +463,10 @@ const PropertyStorage = (() => {
     getPublicPayload,
 
     /**
-     * Generate portable self-hydrating URL for a specific property
+     * Generate permanent URL for a specific property (clean, consistent link)
      */
     getPropertyShareUrl(id) {
       if (typeof window === 'undefined') return '';
-      const prop = this.getById(id);
       const origin = window.location.origin;
       const pathname = window.location.pathname;
       const dir = pathname.substring(0, pathname.lastIndexOf('/') + 1);
@@ -475,29 +474,14 @@ const PropertyStorage = (() => {
         ? window.location.href.split('?')[0].substring(0, window.location.href.split('?')[0].lastIndexOf('/') + 1)
         : `${origin}${dir}`;
 
-      if (!prop) {
-        return `${baseUrl}property-details.html?id=${encodeURIComponent(id)}`;
-      }
-
-      const payload = getPublicPayload(prop);
-      const encoded = toUrlBase64(payload);
-      // Keep URL reasonable in length (< 3500 chars)
-      if (encoded && encoded.length < 3500) {
-        return `${baseUrl}property-details.html?id=${encodeURIComponent(id)}&pdata=${encoded}`;
-      }
       return `${baseUrl}property-details.html?id=${encodeURIComponent(id)}`;
     },
 
     /**
-     * Generate portable self-hydrating URL for website catalog containing custom properties
+     * Generate permanent URL for website / catalog (clean, consistent link)
      */
     getCatalogShareUrl(targetPage = 'properties.html') {
       if (typeof window === 'undefined') return '';
-      const allProps = this.getAll();
-      const customOnly = allProps.filter(p => !p.isSample).map(getPublicPayload);
-      const targetList = customOnly.length > 0 ? customOnly : allProps.map(getPublicPayload);
-      const encoded = toUrlBase64(targetList);
-
       const origin = window.location.origin;
       const pathname = window.location.pathname;
       const dir = pathname.substring(0, pathname.lastIndexOf('/') + 1);
@@ -505,7 +489,7 @@ const PropertyStorage = (() => {
         ? window.location.href.split('?')[0].substring(0, window.location.href.split('?')[0].lastIndexOf('/') + 1)
         : `${origin}${dir}`;
 
-      return `${baseUrl}${targetPage}?catalog=${encoded}`;
+      return `${baseUrl}${targetPage}`;
     },
 
     /**
