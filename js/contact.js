@@ -54,16 +54,24 @@ function initContactForm() {
       Sending Enquiry...
     `;
 
+    const waText = 
+      `*New Contact Enquiry - Stallion Realties*\n\n` +
+      `• *Name:* ${name}\n` +
+      `• *Phone:* ${phone}\n` +
+      `• *Email:* ${email}\n` +
+      `• *Interest:* ${interest || 'Property Inquiry'}\n` +
+      `• *Message:* ${message}\n\n` +
+      `Please get in touch with me regarding this enquiry.`;
+
+    const waUrl = `https://wa.me/919925027051?text=${encodeURIComponent(waText)}`;
+
     setTimeout(() => {
       submitBtn.disabled = false;
       submitBtn.innerHTML = originalText;
       contactForm.reset();
 
-      // Show comprehensive confirmation
-      window.showToast(
-        `Thank you, ${name}! Your enquiry for "${interest || 'Property Assistance'}" has been submitted. Our team will get in touch via phone and email within 24 hours.`,
-        'success'
-      );
-    }, 900);
+      window.showToast(`Thank you, ${name}! Redirecting to WhatsApp to send your enquiry...`, 'success');
+      window.open(waUrl, '_blank');
+    }, 600);
   });
 }

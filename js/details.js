@@ -354,17 +354,57 @@ function initDetailsEnquiryForm(prop) {
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const name = document.getElementById('detailName').value.trim();
-    const phone = document.getElementById('detailPhone').value.trim();
+    const name = document.getElementById('detailName')?.value.trim();
+    const phone = document.getElementById('detailPhone')?.value.trim();
+    const note = document.getElementById('detailNote')?.value.trim();
 
     if (!name || !phone) {
-      alert('Please provide your name and phone number.');
+      window.showToast('Please provide your name and phone number.', 'error');
       return;
     }
 
-    // Success feedback
-    window.showToast(`Thank you, ${name}! Your viewing request for "${prop.title}" has been registered. An advisor will contact you shortly.`, 'success');
-    form.reset();
+    const cleanPhone = phone.replace(/[^0-9+]/g, '');
+    if (cleanPhone.length < 8) {
+      window.showToast('Please enter a valid contact phone number.', 'error');
+      return;
+    }
+
+    // Target WhatsApp Number
+    const targetWhatsApp = (prop.whatsappNumber && !prop.whatsappNumber.includes('[YOUR'))
+      ? prop.whatsappNumber.replace(/[^0-9]/g, '')
+      : '919925027051';
+
+    // Format WhatsApp private tour inquiry text
+    const messageLines = [
+      `*Private Tour Request - Stallion Realties*`,
+      ``,
+      `*Property:* ${prop.title} (ID: ${prop.id})`,
+      `*Price:* ${prop.priceDisplay}`,
+      `*Location:* ${prop.location}`,
+      `*Status:* ${prop.availability || 'Available'}`,
+      ``,
+      `*Client Details:*`,
+      `• *Name:* ${name}`,
+      `• *Phone:* ${phone}`
+    ];
+
+    if (note) {
+      messageLines.push(`• *Preferred Date / Requirements:* ${note}`);
+    }
+
+    messageLines.push(``);
+    messageLines.push(`Please confirm the private tour schedule and address.`);
+
+    const fullMessage = messageLines.join('\n');
+    const waUrl = `https://wa.me/${targetWhatsApp}?text=${encodeURIComponent(fullMessage)}`;
+
+    // Show toast feedback and redirect to WhatsApp
+    window.showToast(`Thank you, ${name}! Redirecting to WhatsApp to confirm your tour...`, 'success');
+
+    setTimeout(() => {
+      window.open(waUrl, '_blank');
+      form.reset();
+    }, 600);
   });
 }
 
