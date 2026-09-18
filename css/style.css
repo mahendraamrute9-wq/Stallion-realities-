@@ -1,4 +1,4 @@
-﻿/* ==========================================================================
+/* ==========================================================================
    STALLION REALTIES - MASTER STYLESHEET
    Aesthetics: Deep Navy / Obsidian Base with Regal Gold Accents
    ========================================================================== */
@@ -2056,4 +2056,289 @@ ul, ol {
 }
 .auth-close:hover { color: var(--text-primary); }
 .auth-modal-header { position: relative; }
+
+/* ==========================================================================
+   PROPERTY SHARE MODAL & SHARE BUTTONS
+   ========================================================================== */
+.card-share-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(10, 15, 29, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--gold-border);
+  color: var(--gold-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all var(--transition-fast);
+}
+
+.card-share-btn:hover {
+  background: var(--gold-primary);
+  color: #070a14;
+  transform: scale(1.1);
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+}
+
+.card-share-btn svg {
+  width: 17px;
+  height: 17px;
+  fill: currentColor;
+}
+
+.share-btn-details {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 20px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: 1px solid var(--gold-border);
+  background: rgba(212, 175, 55, 0.1);
+  color: var(--gold-light);
+  transition: all var(--transition-fast);
+  width: 100%;
+}
+
+.share-btn-details:hover {
+  background: var(--gold-gradient);
+  color: var(--text-dark);
+  box-shadow: var(--shadow-gold);
+  transform: translateY(-2px);
+}
+
+.share-btn-details svg {
+  width: 18px;
+  height: 18px;
+  fill: currentColor;
+}
+
+/* Share Modal Styling */
+.share-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 6, 15, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+.share-modal-overlay.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.share-modal {
+  background: #0d1424;
+  border: 1px solid var(--gold-border);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 480px;
+  padding: 28px 24px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7), 0 0 30px rgba(212, 175, 55, 0.15);
+  transform: translateY(20px) scale(0.96);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+.share-modal-overlay.open .share-modal {
+  transform: translateY(0) scale(1);
+}
+
+.share-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.share-modal-title {
+  font-family: var(--font-serif);
+  font-size: 1.4rem;
+  color: #fff;
+  margin-bottom: 4px;
+}
+
+.share-modal-subtitle {
+  font-size: 0.86rem;
+  color: var(--text-muted);
+}
+
+.share-prop-preview {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.share-prop-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: var(--radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid var(--gold-border);
+}
+
+.share-prop-info h4 {
+  font-size: 0.96rem;
+  color: #fff;
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.share-prop-info p {
+  font-size: 0.82rem;
+  color: var(--gold-light);
+  font-weight: 600;
+}
+
+.share-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.share-channel-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: var(--radius-md);
+  padding: 14px 6px;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.share-channel-item:hover {
+  transform: translateY(-3px);
+}
+
+.share-channel-item.whatsapp:hover {
+  border-color: #25d366;
+  background: rgba(37, 211, 102, 0.12);
+  color: #25d366;
+}
+
+.share-channel-item.facebook:hover {
+  border-color: #1877f2;
+  background: rgba(24, 119, 242, 0.12);
+  color: #1877f2;
+}
+
+.share-channel-item.twitter:hover {
+  border-color: #1da1f2;
+  background: rgba(29, 161, 242, 0.12);
+  color: #1da1f2;
+}
+
+.share-channel-item.linkedin:hover {
+  border-color: #0077b5;
+  background: rgba(0, 119, 181, 0.12);
+  color: #0077b5;
+}
+
+.share-channel-item.email:hover {
+  border-color: var(--gold-primary);
+  background: rgba(212, 175, 55, 0.12);
+  color: var(--gold-light);
+}
+
+.share-channel-item.sms:hover {
+  border-color: #34d399;
+  background: rgba(52, 211, 153, 0.12);
+  color: #34d399;
+}
+
+.share-channel-item.native:hover {
+  border-color: var(--gold-light);
+  background: rgba(212, 175, 55, 0.15);
+  color: var(--gold-light);
+}
+
+.share-channel-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.share-channel-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+.share-copy-box {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-sm);
+  padding: 6px 6px 6px 14px;
+}
+
+.share-copy-input {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+}
+
+.share-copy-btn {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  background: var(--gold-gradient);
+  color: var(--text-dark);
+  font-weight: 600;
+  font-size: 0.82rem;
+  border: none;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.share-copy-btn:hover {
+  box-shadow: var(--shadow-gold);
+}
+
 

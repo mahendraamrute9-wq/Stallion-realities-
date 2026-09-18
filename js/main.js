@@ -125,6 +125,15 @@ function renderPropertyCard(prop) {
         <div class="card-price-tag">
           <span class="price-main">${prop.priceDisplay}</span>
         </div>
+        <button 
+          type="button" 
+          class="card-share-btn" 
+          onclick="event.preventDefault(); event.stopPropagation(); window.PropertyShare && window.PropertyShare.open('${prop.id}');" 
+          title="Share Property"
+          aria-label="Share property on WhatsApp or other apps"
+        >
+          <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+        </button>
       </div>
       
       <div class="card-body">
@@ -159,10 +168,21 @@ function renderPropertyCard(prop) {
 
         <div class="card-footer">
           <span class="card-prop-type">Type: <strong>${prop.type}</strong></span>
-          <a href="property-details.html?id=${prop.id}" class="btn btn-sm btn-gold">
-            View Details
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
-          </a>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button 
+              type="button" 
+              class="btn btn-sm btn-secondary" 
+              onclick="event.preventDefault(); event.stopPropagation(); window.PropertyShare && window.PropertyShare.open('${prop.id}');"
+              title="Share Listing"
+              style="padding: 7px 10px; display: inline-flex; align-items: center; justify-content: center;"
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92c0-1.61-1.31-2.92-2.92-2.92z"/></svg>
+            </button>
+            <a href="property-details.html?id=${prop.id}" class="btn btn-sm btn-gold">
+              View Details
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg>
+            </a>
+          </div>
         </div>
       </div>
     </article>

@@ -236,4 +236,9 @@
   .cta-actions {
     flex-direction: column;
   }
+
+  .share-channels-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
 }
