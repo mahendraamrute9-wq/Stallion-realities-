@@ -30,7 +30,12 @@ const PropertyStorage = (() => {
       status: status,
       type: p.type || 'House',
       price: Number(p.price) || 0,
-      priceDisplay: p.priceDisplay || (p.price ? '₹' + Number(p.price).toLocaleString() : 'Price on Request'),
+      priceDisplay: (() => {
+        let pd = (p.priceDisplay || '').trim();
+        if (pd.startsWith('?')) pd = '₹' + pd.substring(1).trim();
+        if (!pd && p.price) pd = '₹' + Number(p.price).toLocaleString('en-IN');
+        return pd || 'Price on Request';
+      })(),
       location: p.location || 'Metro City',
       area: Number(p.area) || 0,
       areaUnit: p.areaUnit || 'sq. ft.',
