@@ -180,7 +180,7 @@ function initPropertiesCatalog() {
 
   // Listen for admin changes across tabs or windows
   window.addEventListener('storage', (e) => {
-    if (e.key === 'STALLION_PROPERTIES' && window.PropertyStorage) {
+    if ((e.key === 'STALLION_PROPERTIES_STORE' || e.key === 'STALLION_PROPERTIES') && window.PropertyStorage) {
       PropertyStorage.syncRepository();
       applyFilters();
     }

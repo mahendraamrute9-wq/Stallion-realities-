@@ -55,7 +55,7 @@ const PropertyStorage = (() => {
   }
 
   /**
-   * Strip sensitive owner confidential details for public visitors
+   * Strip sensitive owner confidential details for public visitors & payloads
    */
   function sanitizeForPublic(prop) {
     if (!prop) return null;
@@ -70,6 +70,149 @@ const PropertyStorage = (() => {
     delete sanitized.ownerEmail;
     delete sanitized.ownerNotes;
     return sanitized;
+  }
+
+  /**
+   * Prepare compact public payload for URL sharing (strictly strips owner confidential info)
+   */
+  function getPublicPayload(p) {
+    if (!p) return null;
+    const cleanImg = (p.mainImage && !p.mainImage.startsWith('data:')) 
+      ? p.mainImage 
+      : (p.images && p.images[0] && !p.images[0].startsWith('data:') 
+          ? p.images[0] 
+          : 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=1200&q=80');
+
+    const cleanImages = (p.images && Array.isArray(p.images))
+      ? p.images.filter(img => typeof img === 'string' && !img.startsWith('data:') && img.length < 500)
+      : [];
+
+    return {
+      id: p.id,
+      title: p.title,
+      purpose: p.purpose,
+      status: p.status,
+      type: p.type,
+      price: Number(p.price) || 0,
+      priceDisplay: p.priceDisplay || (p.price ? '₹' + Number(p.price).toLocaleString() : 'Price on Request'),
+      location: p.location,
+      area: Number(p.area) || 0,
+      areaUnit: p.areaUnit || 'sq. ft.',
+      bedrooms: p.bedrooms,
+      bathrooms: p.bathrooms,
+      description: p.description || p.shortDescription || '',
+      shortDescription: p.shortDescription || p.description || '',
+      features: Array.isArray(p.features) ? p.features : [],
+      availability: p.availability || 'Available',
+      whatsappNumber: p.whatsappNumber || '919925027051',
+      contactLink: p.contactLink || '',
+      mainImage: cleanImg,
+      heroImage: cleanImg,
+      images: cleanImages.length > 0 ? cleanImages : [cleanImg],
+      additionalImages: cleanImages.slice(1),
+      isSample: false,
+      isDemo: false
+    };
+  }
+
+  /**
+   * UTF-8 URL-safe base64 encoder
+   */
+  function toUrlBase64(data) {
+    try {
+      const jsonStr = JSON.stringify(data);
+      const bytes = new TextEncoder().encode(jsonStr);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      return btoa(binary)
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+    } catch (e) {
+      console.error('Error encoding data to URL-safe base64:', e);
+      return '';
+    }
+  }
+
+  /**
+   * UTF-8 URL-safe base64 decoder
+   */
+  function fromUrlBase64(base64Str) {
+    try {
+      if (!base64Str) return null;
+      let str = base64Str.replace(/-/g, '+').replace(/_/g, '/');
+      while (str.length % 4) {
+        str += '=';
+      }
+      const binary = atob(str);
+      const bytes = new Uint8Array(binary.length);
+      for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+      }
+      const jsonStr = new TextDecoder().decode(bytes);
+      return JSON.parse(jsonStr);
+    } catch (e) {
+      console.warn('Could not decode URL-safe base64 data:', e);
+      return null;
+    }
+  }
+
+  /**
+   * Automatically unpack properties passed in the URL (pdata for single, catalog for multi)
+   */
+  function hydrateFromUrl() {
+    if (typeof window === 'undefined' || !window.location || !window.location.search) return;
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      let changed = false;
+      const currentList = loadProperties();
+
+      // Case 1: Direct single property payload
+      const pdata = urlParams.get('pdata');
+      if (pdata) {
+        const decoded = fromUrlBase64(pdata);
+        if (decoded && (decoded.id || decoded.title)) {
+          const normalized = normalizeProperty(decoded);
+          const existingIdx = currentList.findIndex(p => p.id.toLowerCase() === normalized.id.toLowerCase());
+          if (existingIdx >= 0) {
+            currentList[existingIdx] = { ...currentList[existingIdx], ...normalized };
+          } else {
+            currentList.unshift(normalized);
+          }
+          changed = true;
+          console.log('[Stallion] Successfully hydrated shared property from URL:', normalized.title);
+        }
+      }
+
+      // Case 2: Multi-property catalog payload
+      const catalogData = urlParams.get('catalog');
+      if (catalogData) {
+        const decodedCatalog = fromUrlBase64(catalogData);
+        if (Array.isArray(decodedCatalog) && decodedCatalog.length > 0) {
+          decodedCatalog.forEach(item => {
+            if (item && (item.id || item.title)) {
+              const normalized = normalizeProperty(item);
+              const existingIdx = currentList.findIndex(p => p.id.toLowerCase() === normalized.id.toLowerCase());
+              if (existingIdx >= 0) {
+                currentList[existingIdx] = { ...currentList[existingIdx], ...normalized };
+              } else {
+                currentList.unshift(normalized);
+              }
+              changed = true;
+            }
+          });
+          console.log('[Stallion] Successfully hydrated catalog from URL with', decodedCatalog.length, 'listings.');
+        }
+      }
+
+      if (changed) {
+        saveToLocalStorage(currentList);
+      }
+    } catch (e) {
+      console.warn('[Stallion] URL hydration error:', e);
+    }
   }
 
   /**
@@ -109,6 +252,9 @@ const PropertyStorage = (() => {
       console.error('Storage quota exceeded or storage unavailable:', e);
     }
   }
+
+  // Run immediate hydration upon script initialization
+  hydrateFromUrl();
 
   return {
     /**
@@ -179,22 +325,7 @@ const PropertyStorage = (() => {
      * Generate downloadable JS file content for permanent properties-data.js backup
      */
     exportDataFile() {
-      const currentList = loadProperties();
-      const jsonContent = JSON.stringify(currentList, null, 2);
-
-      const fileContent = `/**
- * STALLION REALTIES - PROPERTY LISTINGS DATABASE (EXPORTED)
- * Exported on: ${new Date().toLocaleString()}
- */
-
-const PROPERTIES_DATA = ${jsonContent};
-
-// Compatibility & Global Repository
-if (typeof window !== 'undefined') {
-  window.PROPERTIES_DATA = PROPERTIES_DATA;
-}
-`;
-
+      const fileContent = this.generatePropertiesDataJs();
       const blob = new Blob([fileContent], { type: 'application/javascript;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const downloadAnchor = document.createElement('a');
@@ -322,6 +453,90 @@ if (typeof window !== 'undefined') {
         // Notify open pages that properties were updated
         window.dispatchEvent(new CustomEvent('properties-updated', { detail: allProps }));
       }
+    },
+
+    /**
+     * Expose payload utilities
+     */
+    toUrlBase64,
+    fromUrlBase64,
+    getPublicPayload,
+
+    /**
+     * Generate portable self-hydrating URL for a specific property
+     */
+    getPropertyShareUrl(id) {
+      if (typeof window === 'undefined') return '';
+      const prop = this.getById(id);
+      const origin = window.location.origin;
+      const pathname = window.location.pathname;
+      const dir = pathname.substring(0, pathname.lastIndexOf('/') + 1);
+      const baseUrl = (window.location.protocol === 'file:')
+        ? window.location.href.split('?')[0].substring(0, window.location.href.split('?')[0].lastIndexOf('/') + 1)
+        : `${origin}${dir}`;
+
+      if (!prop) {
+        return `${baseUrl}property-details.html?id=${encodeURIComponent(id)}`;
+      }
+
+      const payload = getPublicPayload(prop);
+      const encoded = toUrlBase64(payload);
+      // Keep URL reasonable in length (< 3500 chars)
+      if (encoded && encoded.length < 3500) {
+        return `${baseUrl}property-details.html?id=${encodeURIComponent(id)}&pdata=${encoded}`;
+      }
+      return `${baseUrl}property-details.html?id=${encodeURIComponent(id)}`;
+    },
+
+    /**
+     * Generate portable self-hydrating URL for website catalog containing custom properties
+     */
+    getCatalogShareUrl(targetPage = 'properties.html') {
+      if (typeof window === 'undefined') return '';
+      const allProps = this.getAll();
+      const customOnly = allProps.filter(p => !p.isSample).map(getPublicPayload);
+      const targetList = customOnly.length > 0 ? customOnly : allProps.map(getPublicPayload);
+      const encoded = toUrlBase64(targetList);
+
+      const origin = window.location.origin;
+      const pathname = window.location.pathname;
+      const dir = pathname.substring(0, pathname.lastIndexOf('/') + 1);
+      const baseUrl = (window.location.protocol === 'file:')
+        ? window.location.href.split('?')[0].substring(0, window.location.href.split('?')[0].lastIndexOf('/') + 1)
+        : `${origin}${dir}`;
+
+      return `${baseUrl}${targetPage}?catalog=${encoded}`;
+    },
+
+    /**
+     * Generate clean properties-data.js content string for GitHub sync or file export
+     */
+    generatePropertiesDataJs() {
+      // For the public repository file, strip owner confidential information!
+      const currentList = this.getAll().map(p => {
+        const sanitized = { ...p };
+        delete sanitized.ownerName;
+        delete sanitized.ownerPhone;
+        delete sanitized.ownerEmail;
+        delete sanitized.ownerNotes;
+        return sanitized;
+      });
+      const jsonContent = JSON.stringify(currentList, null, 2);
+
+      return `/**
+ * ==============================================================================
+ * STALLION REALTIES - PROPERTY LISTINGS DATABASE (LIVE REPOSITORY)
+ * Last Synchronized: ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })} IST
+ * ==============================================================================
+ */
+
+const PROPERTIES_DATA = ${jsonContent};
+
+// Global & browser compatibility
+if (typeof window !== 'undefined') {
+  window.PROPERTIES_DATA = PROPERTIES_DATA;
+}
+`;
     }
   };
 })();

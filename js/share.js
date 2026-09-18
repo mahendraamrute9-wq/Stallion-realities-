@@ -9,10 +9,17 @@ const PropertyShare = (() => {
   let modalOverlay = null;
 
   /**
-   * Builds the absolute shareable URL for a given property ID
+   * Builds the absolute shareable URL for a given property ID (with self-hydrating payload)
    */
   function getShareUrl(propertyId) {
     if (typeof window === 'undefined') return '';
+    
+    // Use PropertyStorage's portable self-hydrating URL if available
+    if (window.PropertyStorage && typeof window.PropertyStorage.getPropertyShareUrl === 'function') {
+      const portableUrl = window.PropertyStorage.getPropertyShareUrl(propertyId);
+      if (portableUrl) return portableUrl;
+    }
+
     const origin = window.location.origin;
     const pathname = window.location.pathname;
     const dir = pathname.substring(0, pathname.lastIndexOf('/') + 1);

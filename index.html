@@ -436,7 +436,7 @@
 
       // Listen for updates from Admin portal
       window.addEventListener('storage', (e) => {
-        if (e.key === 'STALLION_PROPERTIES' && window.PropertyStorage) {
+        if ((e.key === 'STALLION_PROPERTIES_STORE' || e.key === 'STALLION_PROPERTIES') && window.PropertyStorage) {
           PropertyStorage.syncRepository();
           renderHomeProperties();
         }

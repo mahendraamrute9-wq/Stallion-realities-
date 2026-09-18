@@ -505,6 +505,162 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   /* ==========================================================================
+     MODAL CONTROLS: GITHUB LIVE WEBSITE SYNC
+     ========================================================================== */
+  const githubModal = document.getElementById('githubSyncModal');
+  const tokenInput = document.getElementById('githubTokenInput');
+  const syncStatusEl = document.getElementById('githubSyncStatus');
+  const GITHUB_REPO = 'mahendraamrute9-wq/Stallion-realities-';
+  const GITHUB_FILE_PATH = 'js/properties-data.js';
+
+  function openGithubModal() {
+    if (!githubModal) return;
+    const savedToken = localStorage.getItem('STALLION_GITHUB_TOKEN') || '';
+    if (tokenInput) tokenInput.value = savedToken;
+    if (syncStatusEl) {
+      syncStatusEl.style.display = 'none';
+      syncStatusEl.innerHTML = '';
+    }
+    githubModal.classList.add('open');
+  }
+
+  function closeGithubModal() {
+    if (githubModal) githubModal.classList.remove('open');
+  }
+
+  async function publishToGitHub(token) {
+    if (!token || token.trim() === '') {
+      alert('Please enter your GitHub Personal Access Token to publish.');
+      return false;
+    }
+
+    const cleanToken = token.trim();
+    localStorage.setItem('STALLION_GITHUB_TOKEN', cleanToken);
+
+    if (syncStatusEl) {
+      syncStatusEl.style.display = 'block';
+      syncStatusEl.innerHTML = '<span style="color: var(--gold-light);">Connecting to GitHub repository...</span>';
+    }
+
+    try {
+      // 1. Fetch current file SHA from GitHub
+      const fileUrl = `https://api.github.com/repos/${GITHUB_REPO}/contents/${GITHUB_FILE_PATH}`;
+      const getRes = await fetch(fileUrl, {
+        headers: {
+          'Authorization': `Bearer ${cleanToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      });
+
+      let currentSha = null;
+      if (getRes.status === 200) {
+        const fileData = await getRes.json();
+        currentSha = fileData.sha;
+      } else if (getRes.status === 401) {
+        throw new Error('Invalid or expired GitHub Token. Please check token permissions (must include "repo").');
+      } else if (getRes.status === 404) {
+        // File doesn't exist yet, can create fresh
+        currentSha = null;
+      } else {
+        const errJson = await getRes.json().catch(() => ({}));
+        throw new Error(errJson.message || `GitHub API returned HTTP ${getRes.status}`);
+      }
+
+      if (syncStatusEl) {
+        syncStatusEl.innerHTML = '<span style="color: var(--gold-light);">Committing updated properties database to repository...</span>';
+      }
+
+      // 2. Generate updated properties-data.js content and base64 encode
+      const fileContent = PropertyStorage.generatePropertiesDataJs();
+      const bytes = new TextEncoder().encode(fileContent);
+      let binary = '';
+      for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+      }
+      const base64Content = btoa(binary);
+
+      // 3. Commit to GitHub
+      const payload = {
+        message: `Update properties database via Stallion Admin Portal [${new Date().toLocaleString()}]`,
+        content: base64Content,
+        branch: 'main'
+      };
+      if (currentSha) {
+        payload.sha = currentSha;
+      }
+
+      const putRes = await fetch(fileUrl, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${cleanToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!putRes.ok) {
+        const errJson = await putRes.json().catch(() => ({}));
+        throw new Error(errJson.message || `Publish commit failed with HTTP ${putRes.status}`);
+      }
+
+      // 4. Success!
+      if (syncStatusEl) {
+        syncStatusEl.innerHTML = '<span style="color: var(--accent-green); font-weight: 600;">&#10003; Published successfully! GitHub Pages will refresh for all visitors in ~30 seconds.</span>';
+      }
+      setTimeout(() => {
+        closeGithubModal();
+        window.showToast('Published to live website! All clients will see the changes shortly.', 'success');
+      }, 1200);
+
+      return true;
+    } catch (err) {
+      console.error('GitHub publish error:', err);
+      if (syncStatusEl) {
+        syncStatusEl.style.display = 'block';
+        syncStatusEl.innerHTML = `<span style="color: var(--accent-red); font-weight: 600;">Error: ${err.message}</span>`;
+      }
+      alert(`Publish Failed: ${err.message}`);
+      return false;
+    }
+  }
+
+  // Live Publish trigger from banner button
+  document.getElementById('publishToGithubBtn')?.addEventListener('click', () => {
+    const savedToken = localStorage.getItem('STALLION_GITHUB_TOKEN');
+    if (savedToken) {
+      if (confirm('Publish all current listings directly to your live website (GitHub Pages)? All visitors will see the updated properties.')) {
+        publishToGitHub(savedToken);
+      }
+    } else {
+      openGithubModal();
+    }
+  });
+
+  document.getElementById('configGithubBtn')?.addEventListener('click', openGithubModal);
+  document.getElementById('closeGithubModalBtn')?.addEventListener('click', closeGithubModal);
+  document.getElementById('cancelGithubModalBtn')?.addEventListener('click', closeGithubModal);
+
+  document.getElementById('saveAndPublishGithubBtn')?.addEventListener('click', () => {
+    const token = tokenInput ? tokenInput.value : '';
+    publishToGitHub(token);
+  });
+
+  // Share Website Link with custom properties handler
+  document.getElementById('shareWebsiteLinkBtn')?.addEventListener('click', () => {
+    const catalogUrl = PropertyStorage.getCatalogShareUrl('index.html');
+    if (navigator.clipboard && window.isSecureContext) {
+      navigator.clipboard.writeText(catalogUrl).then(() => {
+        window.showToast('Copied website link with all added properties to clipboard!', 'success');
+      }).catch(() => {
+        prompt('Copy this link to share your website with all added properties:', catalogUrl);
+      });
+    } else {
+      prompt('Copy this link to share your website with all added properties:', catalogUrl);
+    }
+  });
+
+  /* ==========================================================================
      TOOLBAR & GLOBAL EVENT BINDINGS
      ========================================================================== */
   document.getElementById('addNewPropBtn')?.addEventListener('click', openAddModal);
@@ -544,6 +700,7 @@ document.addEventListener('DOMContentLoaded', () => {
       closeModal();
       closeDeleteModal();
       closePasswordModal();
+      closeGithubModal();
     }
   });
 

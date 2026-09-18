@@ -16,7 +16,22 @@ function initPropertyDetails() {
   const urlParams = new URLSearchParams(window.location.search);
   const propertyId = urlParams.get('id') || 'stallion-001'; // default to first demo if empty
 
-  const prop = PropertyRepository.getById(propertyId);
+  let prop = window.PropertyRepository ? window.PropertyRepository.getById(propertyId) : null;
+  if (!prop && window.PropertyStorage) {
+    prop = window.PropertyStorage.getById(propertyId);
+  }
+
+  // Double fallback: if not in repository yet, decode pdata from URL directly
+  if (!prop && urlParams.has('pdata') && window.PropertyStorage && typeof window.PropertyStorage.fromUrlBase64 === 'function') {
+    try {
+      const decoded = window.PropertyStorage.fromUrlBase64(urlParams.get('pdata'));
+      if (decoded && (decoded.id || decoded.title)) {
+        prop = window.PropertyStorage.save(decoded);
+      }
+    } catch (e) {
+      console.warn('Direct pdata fallback parse failed:', e);
+    }
+  }
 
   if (!prop) {
     container.innerHTML = `
